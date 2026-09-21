@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Настольный теннис</title>
+<style>
+  :root{ --ink:#eef2ee; --dim:#9fb0a8; --accent:#e2b23c; --you:#c23b2f; --opp:#7a8aa0; }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;width:100%;height:100%;overflow:hidden;
+    background:#05070a;font-family:"Segoe UI","Helvetica Neue",Arial,sans-serif;
+    color:var(--ink);-webkit-user-select:none;user-select:none;touch-action:none;
+  }
+  #wrap{position:fixed;inset:0;}
+  canvas{display:block;width:100%;height:100%;cursor:none;}
+
+  /* Полосы-маркеры сторон */
+  .side-band{
+    position:fixed;left:0;right:0;height:5px;pointer-events:none;z-index:5;
+    transition:opacity .3s;
+  }
+  .side-band.top{top:0;background:linear-gradient(90deg,transparent,var(--opp),transparent);}
+  .side-band.bottom{bottom:0;background:linear-gradient(90deg,transparent,var(--you),transparent);}
+  .side-label{
+    position:fixed;font-size:11px;letter-spacing:3px;font-weight:700;
+    pointer-events:none;z-index:6;opacity:.7;
+  }
+  .side-label.top{top:8px;left:50%;transform:translateX(-50%);color:var(--opp);}
+  .side-label.bottom{bottom:8px;left:50%;transform:translateX(-50%);color:var(--you);}
+
+  .hud{position:fixed;top:0;left:0;right:0;display:flex;justify-content:space-between;
+    align-items:flex-start;padding:22px 22px;pointer-events:none;font-variant-numeric:tabular-nums;}
+  .score-box{display:flex;flex-direction:column;align-items:center;gap:2px;min-width:96px;}
+  .score-box .label{font-size:11px;letter-spacing:2px;color:var(--dim);font-weight:600;}
+  .score-box .num{font-size:44px;font-weight:800;line-height:1;letter-spacing:-1px;
+    text-shadow:0 2px 10px rgba(0,0,0,.5);}
+  .score-box.you .num{color:#ff8a7a;}
+  .score-box.opp .num{color:#b8c6d8;}
+  .serve-dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 8px var(--accent);margin-top:2px;opacity:0;transition:opacity .15s;}
+  .serve-dot.on{opacity:1;}
+  .center-info{position:fixed;top:20px;left:50%;transform:translateX(-50%);text-align:center;pointer-events:none;}
+  .games-line{font-size:12px;color:var(--dim);letter-spacing:3px;font-weight:600;}
+  .banner{position:fixed;top:38%;left:50%;transform:translate(-50%,-50%) scale(.9);
+    font-size:clamp(28px,6vw,58px);font-weight:800;letter-spacing:1px;text-align:center;
+    pointer-events:none;opacity:0;transition:opacity .18s ease, transform .18s ease;
+    text-shadow:0 4px 24px rgba(0,0,0,.6);white-space:pre-line;z-index:10;}
+  .banner.show{opacity:1;transform:translate(-50%,-50%) scale(1);}
+  .banner.fault{color:#ff7a63;}
+  .banner.good{color:var(--accent);}
+  .banner.neutral{color:var(--ink);}
+  .hint{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);
+    font-size:13px;color:var(--dim);text-align:center;pointer-events:none;
+    background:rgba(0,0,0,.32);padding:6px 14px;border-radius:20px;backdrop-filter:blur(2px);
+    white-space:nowrap;z-index:6;}
+  #overlay{position:fixed;inset:0;background:radial-gradient(circle at 50% 30%, #10221c 0%, #050807 70%);
+    display:flex;align-items:center;justify-content:center;z-index:20;flex-direction:column;
+    gap:20px;padding:20px;text-align:center;overflow-y:auto;}
+  #overlay h1{margin:0;font-size:clamp(30px,6vw,54px);font-weight:800;letter-spacing:-1px;}
+  #overlay h1 span{color:var(--accent);}
+  #overlay p.sub{margin:0;color:var(--dim);font-size:15px;max-width:480px;line-height:1.5;}
+  .menu-btn{
+    padding:16px 32px;border-radius:12px;border:2px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.04);color:var(--ink);font-size:17px;font-weight:700;
+    cursor:pointer;letter-spacing:.5px;transition:.12s;pointer-events:all;width:280px;
+  }
+  .menu-btn:hover{background:var(--accent);border-color:var(--accent);color:#1a1400;}
+  .menu-btn.primary{background:var(--accent);border-color:var(--accent);color:#1a1400;}
+  .menu-btn.primary:hover{background:#f0c94c;}
+  .menu-row{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;}
+  .diff-btn{padding:12px 22px;border-radius:10px;border:2px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.04);color:var(--ink);font-size:15px;font-weight:700;
+    cursor:pointer;letter-spacing:.5px;transition:.12s;pointer-events:all;}
+  .diff-btn:hover,.diff-btn.active{background:var(--accent);border-color:var(--accent);color:#1a1400;}
+  .theme-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;}
+  .theme-btn{width:38px;height:38px;border-radius:50%;border:2px solid rgba(255,255,255,.25);
+    cursor:pointer;transition:.15s;pointer-events:all;}
+  .theme-btn:hover,.theme-btn.active{transform:scale(1.12);border-color:#fff;}
+  .rules{max-width:580px;text-align:left;background:rgba(255,255,255,.04);
+    border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 18px;
+    font-size:13px;line-height:1.6;color:var(--dim);}
+  .rules b{color:var(--ink);}
+  .net-panel{display:none;flex-direction:column;gap:14px;align-items:center;}
+  .net-panel.show{display:flex;}
+  .net-input{
+    padding:14px 18px;border-radius:10px;border:2px solid rgba(255,255,255,.18);
+    background:rgba(0,0,0,.3);color:var(--ink);font-size:20px;font-weight:700;
+    text-align:center;letter-spacing:4px;width:260px;font-family:monospace;
+  }
+  .net-input:focus{outline:none;border-color:var(--accent);}
+  .net-status{font-size:14px;color:var(--dim);min-height:20px;text-align:center;max-width:340px;}
+  .net-status.error{color:#ff7a63;}
+  .net-status.ok{color:var(--accent);}
+  .room-code{font-size:32px;font-weight:800;letter-spacing:8px;color:var(--accent);
+    font-family:monospace;cursor:pointer;user-select:text;-webkit-user-select:text;}
+  .back-btn{padding:10px 20px;border-radius:8px;border:1px solid rgba(255,255,255,.14);
+    background:transparent;color:var(--dim);font-size:14px;cursor:pointer;pointer-events:all;}
+  .back-btn:hover{color:var(--ink);border-color:rgba(255,255,255,.4);}
+  #endcard{position:fixed;inset:0;background:rgba(3,5,6,.85);display:none;
+    align-items:center;justify-content:center;z-index:25;flex-direction:column;gap:18px;}
+  #endcard h2{font-size:clamp(30px,6vw,52px);margin:0;font-weight:800;}
+  #endcard .again{padding:14px 30px;border-radius:10px;border:none;background:var(--accent);
+    color:#1a1400;font-weight:800;font-size:16px;cursor:pointer;}
+  #endcard .again.outline{background:transparent;border:2px solid rgba(255,255,255,.2);color:var(--ink);}
+  .net-badge{
+    position:fixed;top:50%;left:12px;transform:translateY(-50%);
+    font-size:10px;letter-spacing:2px;color:var(--dim);writing-mode:vertical-rl;
+    text-orientation:mixed;opacity:.5;pointer-events:none;z-index:5;
+  }
+  @media (max-width:520px){
+    .score-box .num{font-size:32px;}
+    .score-box{min-width:70px;}
+    .hud{padding:16px 14px;}
+    .hint{font-size:11px;white-space:normal;width:90%;}
+    .menu-btn{width:100%;max-width:300px;}
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <canvas id="c"></canvas>
+
+  <!-- Индикаторы сторон -->
+  <div class="side-band top"></div>
+  <div class="side-band bottom"></div>
+  <div class="side-label top">СОПЕРНИК ▲ ВВЕРХУ</div>
+  <div class="side-label bottom">▼ ВЫ ВНИЗУ</div>
+  <div class="net-badge" id="netBadge">P2P</div>
+
+  <div class="hud">
+    <div class="score-box you">
+      <div class="label">ВЫ</div>
+      <div class="num" id="scoreYou">0</div>
+      <div class="serve-dot" id="dotYou"></div>
+    </div>
+    <div class="center-info"><div class="games-line" id="gamesLine">ПАРТИИ 0 : 0</div></div>
+    <div class="score-box opp">
+      <div class="label" id="oppLabel">КОМПЬЮТЕР</div>
+      <div class="num" id="scoreCpu">0</div>
+      <div class="serve-dot" id="dotCpu"></div>
+    </div>
+  </div>
+  <div class="banner" id="banner"></div>
+  <div class="hint" id="hint">Двигайте мышью — ракетка следует за курсором. B — сменить фон.</div>
+
+  <!-- ГЛАВНОЕ МЕНЮ -->
+  <div id="overlay">
+    <div id="menuMain">
+      <h1>Настольный <span>теннис</span></h1>
+      <p class="sub">P2P-мультиплеер прямо в браузере. Выберите режим игры.</p>
+      <div style="display:flex;flex-direction:column;gap:12px;align-items:center;">
+        <button class="menu-btn primary" id="btnBot">🎮 Играть с ботом</button>
+        <button class="menu-btn" id="btnOnline">🌐 Играть по сети (P2P)</button>
+      </div>
+      <div class="theme-row" id="themeRow"></div>
+      <div class="rules">
+        <b>Стороны:</b> ВЫ всегда внизу, соперник всегда сверху — и у вас, и у него.<br>
+        <b>Правила:</b> мяч должен один раз отскочить на вашей половине, прежде чем отбить.<br>
+        <b>Очко:</b> если мяч после удара коснулся половины соперника, а тот не отбил — очко ударившему. Иначе аут/сетка — очко сопернику ударившего.<br>
+        Игра до 11 очков, разница минимум 2.
+      </div>
+    </div>
+
+    <div id="menuBot" style="display:none;">
+      <h1>Игра <span>с ботом</span></h1>
+      <p class="sub">Выберите уровень сложности.</p>
+      <div class="menu-row">
+        <button class="diff-btn" data-d="easy">Лёгкий</button>
+        <button class="diff-btn active" data-d="medium">Средний</button>
+        <button class="diff-btn" data-d="hard">Сложный</button>
+      </div>
+      <div class="theme-row" id="themeRowBot"></div>
+      <button class="menu-btn" id="btnBotStart" style="margin-top:8px;">Начать игру</button>
+      <button class="back-btn" id="btnBackFromBot">← Назад</button>
+    </div>
+
+    <div id="menuNet" style="display:none;">
+      <h1>Игра <span>по сети</span></h1>
+      <div class="net-panel show" id="netLobby">
+        <p class="sub">Создайте комнату или присоединитесь по коду.</p>
+        <button class="menu-btn primary" id="btnCreateRoom">Создать комнату</button>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;">
+          <input class="net-input" id="joinCode" placeholder="КОД" maxlength="6" autocomplete="off">
+          <button class="menu-btn" id="btnJoinRoom" style="width:auto;padding:14px 24px;">Войти</button>
+        </div>
+        <div class="net-status" id="netStatus"></div>
+        <button class="back-btn" id="btnBackFromNet">← Назад</button>
+      </div>
+      <div class="net-panel" id="netWaiting">
+        <p class="sub">Комната создана. Отправьте код другу:</p>
+        <div class="room-code" id="roomCodeDisplay">------</div>
+        <p class="sub" style="font-size:13px;">Нажмите на код, чтобы скопировать.</p>
+        <div class="net-status" id="netWaitStatus">Ожидание соперника...</div>
+        <button class="back-btn" id="btnCancelRoom">Отменить</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="endcard">
+    <h2 id="endTitle">Победа!</h2>
+    <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
+      <button class="again" id="againBtn">Играть снова</button>
+      <button class="again outline" id="menuBtn">В меню</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script>
+(function(){
+"use strict";
+
+/* ======================= CANVAS ======================= */
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W=0,H=0,DPR=1;
+function resize(){
+  DPR = Math.min(window.devicePixelRatio||1, 2);
+  W = window.innerWidth; H = window.innerHeight;
+  canvas.width = W*DPR; canvas.height = H*DPR;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ======================= AUDIO ======================= */
+let actx=null;
+function ac(){ if(!actx){ try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } return actx; }
+function beep(freq, dur, type, gain, when){
+  const a = ac(); if(!a) return;
+  const t0 = a.currentTime + (when||0);
+  const osc = a.createOscillator();
+  const g = a.createGain();
+  osc.type = type||'sine';
+  osc.frequency.setValueAtTime(freq, t0);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(gain||0.18, t0+0.006);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+  osc.connect(g); g.connect(a.destination);
+  osc.start(t0); osc.stop(t0+dur+0.02);
+}
+const sfx = {
+  paddle: ()=>beep(720,0.07,'triangle',0.22),
+  table:  ()=>beep(280,0.05,'sine',0.14),
+  net:    ()=>beep(150,0.12,'sawtooth',0.10),
+  score:  ()=>{ beep(520,0.12,'sine',0.16); beep(780,0.16,'sine',0.14,0.09); },
+  serve:  ()=>beep(880,0.05,'triangle',0.15),
+};
+
+/* ======================= WORLD ======================= */
+const TABLE_LEN = 274;
+const HALF_W    = 76.25;
+const NET_Y     = 137;
+const NET_H     = 15.25 / 1.5;
+const NET_BAND  = 3.2;
+const BALL_R    = 2.0;
+const HIT_R_XY  = 11.0;
+const HIT_R_Z   = 55.0;
+const PADDLE_R  = 7.5;
+const G          = -620;
+const TIME_SCALE = 0.72;
+const REST       = 0.80;
+const FRICTION   = 0.94;
+const NET_DECEL  = 0.22;
+const P_Y_MIN = -20;
+const P_Y_MAX = 150;
+const A_Y_MIN = 166, A_Y_MAX = 271;
+
+/* ======================= THEMES ======================= */
+const THEMES = [
+  { name:'Арена', sky:['#0e1626','#070a12','#03050a'], glow:'rgba(120,170,255,0.10)',
+    table:['#123a56','#0b2438'], line:'rgba(255,255,255,0.85)', lineSoft:'rgba(255,255,255,0.35)',
+    net:'rgba(255,255,255,0.13)', netEdge:'rgba(255,255,255,0.55)',
+    paddleYou:'#c23b2f', paddleAi:'#1b1c1e', swatch:'#123a56' },
+  { name:'Лес', sky:['#0f2318','#07130d','#030805'], glow:'rgba(120,255,170,0.08)',
+    table:['#0e4a3d','#0a3a30'], line:'rgba(240,255,240,0.85)', lineSoft:'rgba(240,255,240,0.32)',
+    net:'rgba(240,255,240,0.14)', netEdge:'rgba(240,255,240,0.55)',
+    paddleYou:'#c23b2f', paddleAi:'#1b1c1e', swatch:'#0e4a3d' },
+  { name:'Закат', sky:['#2a1526','#1a0d18','#080407'], glow:'rgba(255,150,90,0.12)',
+    table:['#5a2a2e','#3a181c'], line:'rgba(255,240,225,0.85)', lineSoft:'rgba(255,240,225,0.32)',
+    net:'rgba(255,235,220,0.14)', netEdge:'rgba(255,235,220,0.55)',
+    paddleYou:'#ff7a3c', paddleAi:'#241018', swatch:'#5a2a2e' },
+  { name:'Неон', sky:['#161033','#0d0820','#04030c'], glow:'rgba(180,120,255,0.14)',
+    table:['#1b2f5c','#101c3a'], line:'rgba(220,240,255,0.9)', lineSoft:'rgba(220,240,255,0.35)',
+    net:'rgba(180,220,255,0.16)', netEdge:'rgba(180,220,255,0.6)',
+    paddleYou:'#ff3b8a', paddleAi:'#0f1226', swatch:'#1b2f5c' },
+];
+let themeIndex = 0;
+function theme(){ return THEMES[themeIndex]; }
+
+/* ======================= CAMERA ======================= */
+const EYE = { x:0, y:-70, z:78 };
+const FOCAL = 520;
+function project(x,y,z){
+  const ry = y - EYE.y;
+  const scale = FOCAL/ry;
+  return { x: x*scale, y: -(z-EYE.z)*scale, s: scale };
+}
+
+/* ======================= DIFFICULTY ======================= */
+const DIFF = {
+  easy:   { speed: 95,  err: 42, power: 0.70, lazy: 0.35, react: 0.55 },
+  medium: { speed: 170, err: 18, power: 1.00, lazy: 0.12, react: 0.85 },
+  hard:   { speed: 265, err: 5,  power: 1.25, lazy: 0.00, react: 1.00 },
+};
+let difficulty = DIFF.medium;
+
+/* ======================= GAME MODE ======================= */
+let gameMode = 'bot';   // 'bot' | 'online'
+let isHost = false;     // в онлайне: хост — авторитетная симуляция
+let connected = false;
+
+/* ======================= STATE ======================= */
+const state = {
+  mode:'menu',
+  server:'you',
+  scoreYou:0, scoreCpu:0,
+  gamesYou:0, gamesCpu:0,
+  pointsPlayedInGame:0,
+  ball:null,
+  // Визуальная позиция мяча для клиента (интерполяция)
+  ballVisual:null,
+  ballTarget:null,
+
+  player:{x:0,y:60,z:0, vx:0,vy:0, prevX:0, prevY:0},
+  ai:{x:0,y:230,z:0, vx:0,vy:0, targetX:0, targetY:230, lazyTimer:0, frozenUntil:0},
+
+  mouse:{x:0,y:0, active:false},
+  lastTime:0,
+  serveSwingSpeed:0,
+
+  // Позиция соперника в ЛОКАЛЬНОЙ системе координат (соперник всегда сверху)
+  remoteInput:{x:0,y:230, swing:0},
+  lastNetSend:0,
+};
+
+function newBall(){
+  return {
+    x:0,y:0,z:8, vx:0,vy:0,vz:0,
+    side:'you', lastHitter:null, bouncedSide:null, bouncesOnThisSide:0,
+    inServe:true, serveOwnBounceDone:false, resting:true,
+  };
+}
+
+/* ======================= MIRROR (CANONICAL <-> LOCAL) =======================
+   Каноническая система (хост):
+     y = 0    — сторона ХОСТА
+     y = 274  — сторона КЛИЕНТА
+   Локальная система клиента СОВПАДАЕТ с визуальной:
+     y = 0    — сторона КЛИЕНТА (он всегда внизу)
+     y = 274  — сторона ХОСТА (он всегда вверху)
+
+   Значит: y_local = TABLE_LEN - y_canon, x_local = -x_canon.
+   Операция симметрична — одна и та же функция для туда и обратно. */
+function toLocal(p){
+  return { x: -p.x, y: TABLE_LEN - p.y };
+}
+function mirrorBall(b){
+  if(!b) return null;
+  const swap = s => s ? (s==='you' ? 'ai' : 'you') : null;
+  return {
+    x: -b.x,
+    y: TABLE_LEN - b.y,
+    z: b.z,
+    vx: -b.vx,
+    vy: -b.vy,
+    vz: b.vz,
+    side: swap(b.side),
+    lastHitter: swap(b.lastHitter),
+    bouncedSide: swap(b.bouncedSide),
+    bouncesOnThisSide: b.bouncesOnThisSide,
+    inServe: b.inServe,
+    serveOwnBounceDone: b.serveOwnBounceDone,
+    resting: b.resting,
+  };
+}
+
+/* ======================= INPUT ======================= */
+function setMouseFromEvent(clientX, clientY){
+  const rect = canvas.getBoundingClientRect();
+  state.mouse.x = clientX - rect.left;
+  state.mouse.y = clientY - rect.top;
+  state.mouse.active = true;
+}
+canvas.addEventListener('mousemove', e=> setMouseFromEvent(e.clientX,e.clientY));
+canvas.addEventListener('touchmove', e=>{
+  if(e.touches[0]) setMouseFromEvent(e.touches[0].clientX, e.touches[0].clientY);
+  e.preventDefault();
+}, {passive:false});
+canvas.addEventListener('touchstart', e=>{
+  if(e.touches[0]) setMouseFromEvent(e.touches[0].clientX, e.touches[0].clientY);
+  e.preventDefault();
+}, {passive:false});
+canvas.addEventListener('click', ()=> tryServe());
+window.addEventListener('keydown', e=>{
+  if(e.code==='Space'){ e.preventDefault(); tryServe(); }
+  if(e.code==='KeyB'){ cycleTheme(); }
+});
+function tryServe(){
+  if(state.mode==='serve' && state.server==='you') launchServe('you');
+}
+function cycleTheme(){
+  themeIndex = (themeIndex+1)%THEMES.length;
+  syncThemeButtons();
+  setHint('Фон: '+theme().name+'  ·  B — сменить');
+}
+
+/* ======================= MATH ======================= */
+function aimShot(x0,y0,z0,x1,y1,apex){
+  const g = Math.abs(G);
+  const h = Math.max(apex, z0+4, 6);
+  const tUp = Math.sqrt(Math.max(2*(h-z0)/g, 0.0001));
+  const tDown = Math.sqrt(Math.max(2*h/g, 0.0001));
+  const t = tUp+tDown;
+  const vz = g*tUp;
+  const vx = (x1-x0)/t;
+  const vy = (y1-y0)/t;
+  return {vx,vy,vz,t};
+}
+function timeToGround(z,vz){
+  const a=0.5*G, b=vz, c=z;
+  const disc = b*b-4*a*c;
+  if(disc<0) return null;
+  const sq = Math.sqrt(disc);
+  const t1 = (-b+sq)/(2*a);
+  const t2 = (-b-sq)/(2*a);
+  const candidates = [t1,t2].filter(t=>t>0.001);
+  if(!candidates.length) return null;
+  return Math.min(...candidates);
+}
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function rand(a,b){ return a+Math.random()*(b-a); }
+
+/* ======================= BANNER ======================= */
+let bannerTimer=null;
+function showBanner(text, cls, ms){
+  const el = document.getElementById('banner');
+  el.textContent = text;
+  el.className = 'banner show '+(cls||'neutral');
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(()=>{ el.className='banner '+(cls||'neutral'); }, ms||1100);
+}
+function setHint(t){ document.getElementById('hint').textContent = t; }
+
+/* ======================= SCORING ======================= */
+function updateScoreUI(){
+  document.getElementById('scoreYou').textContent = state.scoreYou;
+  document.getElementById('scoreCpu').textContent = state.scoreCpu;
+  document.getElementById('dotYou').classList.toggle('on', state.server==='you');
+  document.getElementById('dotCpu').classList.toggle('on', state.server==='ai');
+  document.getElementById('gamesLine').textContent =
+    'ПАРТИИ  '+state.gamesYou+' : '+state.gamesCpu;
+}
+function pointOutcome(winner, reason){
+  if(state.mode==='point-end'||state.mode==='game-end') return;
+  state.mode='point-end';
+  if(winner==='you') state.scoreYou++; else state.scoreCpu++;
+  sfx.score();
+  updateScoreUI();
+  const you=state.scoreYou, cpu=state.scoreCpu;
+  const finished = (you>=11||cpu>=11) && Math.abs(you-cpu)>=2;
+  if(reason) showBanner(reason, winner==='you'?'good':'fault', 900);
+  setTimeout(()=>{
+    if(finished){ endGame(you>cpu?'you':'ai'); }
+    else{
+      state.pointsPlayedInGame = you+cpu;
+      const deuce = you>=10 && cpu>=10;
+      const switchServe = deuce ? true : (state.pointsPlayedInGame % 2 === 0);
+      if(switchServe) state.server = state.server==='you' ? 'ai' : 'you';
+      resetForServe();
+    }
+  }, 950);
+}
+function endGame(winner){
+  state.mode='game-end';
+  if(winner==='you') state.gamesYou++; else state.gamesCpu++;
+  updateScoreUI();
+  const card = document.getElementById('endcard');
+  document.getElementById('endTitle').textContent = winner==='you' ? 'Вы выиграли партию! 🏓' : 'Соперник выиграл партию';
+  document.getElementById('endTitle').style.color = winner==='you' ? '#e2b23c' : '#ff7a63';
+  card.style.display='flex';
+}
+document.getElementById('againBtn').addEventListener('click', ()=>{
+  document.getElementById('endcard').style.display='none';
+  state.scoreYou=0; state.scoreCpu=0;
+  state.server = Math.random()<0.5?'you':'ai';
+  updateScoreUI();
+  if(isHost || gameMode==='bot') resetForServe();
+});
+document.getElementById('menuBtn').addEventListener('click', ()=>{
+  document.getElementById('endcard').style.display='none';
+  state.scoreYou=0; state.scoreCpu=0;
+  state.mode='menu';
+  if(conn){ try{ conn.close(); }catch(e){} conn=null; }
+  if(peer){ peer.destroy(); peer=null; }
+  connected=false;
+  document.getElementById('overlay').style.display='flex';
+  document.getElementById('menuMain').style.display='block';
+  document.getElementById('menuBot').style.display='none';
+  document.getElementById('menuNet').style.display='none';
+  document.getElementById('netBadge').style.display='none';
+});
+
+/* ======================= SERVE ======================= */
+function resetForServe(){
+  if(gameMode==='online' && !isHost){
+    // Клиент ждёт state от хоста
+    return;
+  }
+  state.mode='serve';
+  const ball = newBall();
+  if(state.server==='you'){
+    ball.x = clamp(state.player.x,-60,60);
+    ball.y = Math.max(state.player.y,14);
+    ball.z = 9; ball.side='you';
+  }else{
+    const oppX = gameMode==='online' ? state.remoteInput.x : state.ai.x;
+    const oppY = gameMode==='online' ? state.remoteInput.y : state.ai.y;
+    ball.x = clamp(oppX,-60,60);
+    ball.y = Math.min(oppY,260);
+    ball.z = 9; ball.side='ai';
+  }
+  ball.resting = true; ball.inServe = true;
+  ball.lastHitter = null; ball.bouncedSide = null; ball.bouncesOnThisSide = 0;
+  ball.serveOwnBounceDone = false;
+  state.ball = ball;
+  state.serveSwingSpeed = 0;
+  setHint(state.server==='you'
+    ? 'Размахнитесь ракеткой (или клик / пробел), чтобы подать'
+    : 'Соперник подаёт...');
+  if(state.server==='ai'){
+    if(gameMode==='bot'){
+      setTimeout(()=>{ if(state.mode==='serve') launchServe('ai'); }, rand(600,1100));
+    } else if(isHost){
+      setTimeout(()=>{ if(state.mode==='serve') launchServe('ai'); }, rand(600,1100));
+    }
+  }
+}
+function launchServe(who){
+  const ball = state.ball;
+  if(!ball || !ball.resting) return;
+  if(gameMode==='online' && !isHost) return;   // клиент не запускает подачу сам
+  ball.resting = false;
+  state.mode='rally';
+  sfx.serve();
+  if(who==='you'){
+    const aimX = clamp(state.player.x, -68, 68);
+    const x1 = clamp(aimX*0.6, -60,60);
+    const y1 = rand(38,58);
+    const v = aimShot(ball.x,ball.y,ball.z, x1,y1, 26);
+    ball.vx=v.vx; ball.vy=v.vy; ball.vz=v.vz;
+  }else{
+    const x1 = rand(-55,55);
+    const y1 = rand(220,250);
+    const v = aimShot(ball.x,ball.y,ball.z, x1,y1, 26);
+    ball.vx=v.vx; ball.vy=v.vy; ball.vz=v.vz;
+  }
+  ball.lastHitter = who;
+  ball.bouncedSide = null;
+  ball.bouncesOnThisSide = 0;
+  ball.serveOwnBounceDone = false;
+  setHint('Ждите отскока на своей половине, затем отбивайте!');
+}
+
+/* ======================= STRIKE ======================= */
+function strike(ball, hitter, paddle, paddleVel){
+  const towardAI = hitter==='you';
+  const speedMag = Math.min(Math.hypot(paddleVel.x, paddleVel.y), 260);
+  const force = clamp(speedMag / 260, 0, 1);
+  const steerX = clamp(paddleVel.x * 0.35, -45, 45);
+  const tx = clamp(ball.x + steerX, -90, 90);
+  const baseNear = towardAI ? 165 : 55;
+  const baseFar  = towardAI ? 245 : 105;
+  let ty = baseNear + (baseFar - baseNear) * force;
+  ty += clamp(paddleVel.y * 0.20, -25, 25);
+  ty = clamp(ty, towardAI ? 145 : 5, towardAI ? 272 : 132);
+  const apex = 14 + force * 16;
+  const v = aimShot(ball.x, ball.y, Math.max(ball.z, 2), tx, ty, apex);
+  const paceMul = 1 + force * 0.18;
+  ball.vx = v.vx * paceMul;
+  ball.vy = v.vy * paceMul;
+  ball.vz = v.vz;
+  ball.lastHitter = hitter;
+  ball.bouncedSide = null;
+  ball.bouncesOnThisSide = 0;
+  ball.inServe = false;
+  sfx.paddle();
+}
+
+/* ======================= AI ======================= */
+function updateAI(dt, ball){
+  const ai = state.ai;
+  const D = difficulty;
+  ai.targetY = 232;
+  ai.targetX = ai.x;
+  if(ball && !ball.resting){
+    if(ball.vy > 5){
+      const t = (250 - ball.y)/ball.vy;
+      if(t>0 && t<4){
+        const predX = ball.x + ball.vx*t;
+        ai.targetX = clamp(predX + rand(-D.err, D.err), -HALF_W+6, HALF_W-6);
+      }
+      const gt = timeToGround(ball.z, ball.vz);
+      if(gt!=null){
+        const useGt = gt * D.react;
+        const groundY = ball.y + ball.vy*useGt;
+        if(groundY>NET_Y && groundY<270){
+          ai.targetY = clamp(groundY+16, A_Y_MIN, A_Y_MAX);
+        }
+      }
+    }
+    if(D.lazy > 0){
+      ai.lazyTimer -= dt;
+      if(ai.lazyTimer <= 0){
+        ai.lazyTimer = rand(0.4, 1.6);
+        if(Math.random() < D.lazy){
+          ai.frozenUntil = performance.now() + rand(80, 260);
+        }
+      }
+      if(performance.now() < (ai.frozenUntil||0)){
+        ai.vx = 0; ai.vy = 0;
+        return;
+      }
+    }
+  } else {
+    ai.targetX = 0;
+  }
+  const maxStep = D.speed*dt;
+  const dx = clamp(ai.targetX-ai.x, -maxStep, maxStep);
+  const dy = clamp(ai.targetY-ai.y, -maxStep*0.7, maxStep*0.7);
+  ai.vx = dx/Math.max(dt,0.0001);
+  ai.vy = dy/Math.max(dt,0.0001);
+  ai.x += dx; ai.y += dy;
+  ai.x = clamp(ai.x, -HALF_W+4, HALF_W-4);
+  ai.y = clamp(ai.y, A_Y_MIN, A_Y_MAX);
+}
+
+/* ======================= PLAYER PADDLE ======================= */
+function updatePlayer(dt){
+  const p = state.player;
+  p.prevX = p.x; p.prevY = p.y;
+  if(state.mouse.active){
+    const my = clamp(state.mouse.y/H, 0, 1);
+    const targetY = P_Y_MIN + (1-my) * (P_Y_MAX - P_Y_MIN);
+    const scaleAtY = FOCAL/(targetY - EYE.y);
+    const worldX = (state.mouse.x - W/2)/scaleAtY;
+    p.x = clamp(worldX, -HALF_W-30, HALF_W+30);
+    p.y = targetY;
+  }
+  p.vx = (p.x-p.prevX)/Math.max(dt,0.0001);
+  p.vy = (p.y-p.prevY)/Math.max(dt,0.0001);
+
+  if(state.mode==='serve' && state.server==='you' && state.ball && state.ball.resting){
+    const swing = Math.hypot(p.vx, p.vy);
+    state.serveSwingSpeed = Math.max(state.serveSwingSpeed*0.85, swing);
+    if(swing > 90) launchServe('you');
+  } else {
+    state.serveSwingSpeed = 0;
+  }
+}
+
+/* ======================= NETWORK ======================= */
+let peer = null;
+let conn = null;
+let roomCode = '';
+
+function genCode(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
+
+function initPeer(){
+  if(peer) peer.destroy();
+  peer = new Peer('pingpong-'+genCode(), { debug: 1 });
+  peer.on('open', (id) => {
+    roomCode = id.replace('pingpong-','');
+    document.getElementById('roomCodeDisplay').textContent = roomCode;
+    document.getElementById('netWaitStatus').textContent = 'Ожидание соперника...';
+  });
+  peer.on('connection', (c) => {
+    conn = c;
+    setupConnection();
+    isHost = true;
+    startOnlineGame(true);
+  });
+  peer.on('error', (err) => {
+    setNetStatus('Ошибка: '+err.type, 'error');
+  });
+}
+
+function setupConnection(){
+  conn.on('open', () => {
+    connected = true;
+    setNetStatus('Соперник подключён!', 'ok');
+  });
+  conn.on('data', (data) => handleNetData(data));
+  conn.on('close', () => {
+    connected = false;
+    setNetStatus('Соперник отключился.', 'error');
+    setHint('Соперник отключился. Нажмите «В меню».');
+    setTimeout(()=>{
+      document.getElementById('overlay').style.display='flex';
+      document.getElementById('menuMain').style.display='block';
+      document.getElementById('menuNet').style.display='none';
+      state.mode='menu';
+    }, 1500);
+  });
+}
+
+function handleNetData(data){
+  if(!data || !data.t) return;
+
+  if(data.t === 'input'){
+    // input ВСЕГДА приходит от клиента.
+    // Клиент отправляет свою локальную позицию (у него соперник = хост = вверху).
+    // Хосту нужно зеркалить, т.к. у него эта позиция = сторона клиента = вверху.
+    if(isHost){
+      const c = toLocal({ x: data.x, y: data.y });
+      state.remoteInput.x = c.x;
+      state.remoteInput.y = c.y;
+      state.remoteInput.swing = data.swing || 0;
+    }
+  }
+  else if(data.t === 'state'){
+    // state приходит от ХОСТА в канонической системе.
+    // Клиент зеркалит в свою локальную, где он внизу, хост вверху.
+    if(gameMode==='online' && !isHost){
+      state.ballTarget = mirrorBall(data.ball);
+      if(!state.ballVisual) state.ballVisual = JSON.parse(JSON.stringify(state.ballTarget));
+      state.scoreYou = data.scoreYou;
+      state.scoreCpu = data.scoreCpu;
+      // server приходит в канонической: 'you' — хост подаёт, 'ai' — клиент.
+      // У клиента 'you' = он сам → инвертируем.
+      state.server = data.server === 'you' ? 'ai' : 'you';
+      state.gamesYou = data.gamesYou;
+      state.gamesCpu = data.gamesCpu;
+      state.mode = data.mode || 'rally';
+      updateScoreUI();
+    }
+  }
+}
+
+function sendNet(data){
+  if(conn && conn.open) conn.send(data);
+}
+
+function netTick(ts){
+  if(gameMode!=='online' || !conn || !conn.open) return;
+  if(ts - state.lastNetSend < 33) return;
+  state.lastNetSend = ts;
+
+  if(isHost){
+    // Хост рассылает авторитетное состояние (каноническая система)
+    sendNet({
+      t: 'state',
+      ball: state.ball,
+      scoreYou: state.scoreYou,
+      scoreCpu: state.scoreCpu,
+      server: state.server,
+      gamesYou: state.gamesYou,
+      gamesCpu: state.gamesCpu,
+      mode: state.mode,
+    });
+  } else {
+    // Клиент отправляет свою локальную позицию — хост зеркалит сам
+    sendNet({
+      t: 'input',
+      x: state.player.x,
+      y: state.player.y,
+      swing: state.serveSwingSpeed,
+    });
+  }
+}
+
+/* ======================= START ONLINE ======================= */
+function startOnlineGame(host){
+  isHost = host;
+  gameMode = 'online';
+  document.getElementById('oppLabel').textContent = 'СОПЕРНИК';
+  document.getElementById('netBadge').style.display = 'block';
+  document.getElementById('netBadge').textContent = host ? 'P2P · ХОСТ' : 'P2P · КЛИЕНТ';
+  document.getElementById('overlay').style.display='none';
+  ac();
+  state.scoreYou=0; state.scoreCpu=0;
+  state.gamesYou=0; state.gamesCpu=0;
+  updateScoreUI();
+
+  if(host){
+    state.server = 'you';
+    resetForServe();
+    setHint('Вы хост. Подавайте размахом!');
+  } else {
+    state.server = 'ai';
+    state.ball = null;
+    state.ballVisual = null;
+    state.ballTarget = null;
+    state.mode = 'serve';
+    setHint('Ожидание первого удара от хоста...');
+  }
+  if(!loopStarted){ loopStarted=true; requestAnimationFrame(loop); }
+}
+
+/* ======================= START BOT ======================= */
+function startBotGame(){
+  gameMode = 'bot';
+  isHost = true;
+  document.getElementById('oppLabel').textContent = 'КОМПЬЮТЕР';
+  document.getElementById('netBadge').style.display = 'none';
+  document.getElementById('overlay').style.display='none';
+  ac();
+  state.scoreYou=0; state.scoreCpu=0;
+  state.gamesYou=0; state.gamesCpu=0;
+  state.server = Math.random()<0.5 ? 'you' : 'ai';
+  updateScoreUI();
+  resetForServe();
+  if(!loopStarted){ loopStarted=true; requestAnimationFrame(loop); }
+}
+
+/* ======================= BALL PHYSICS ======================= */
+function stepBall(dt, ball){
+  if(ball.resting){
+    ball.x = state.server==='you' ? state.player.x :
+             (gameMode==='online' ? state.remoteInput.x : state.ai.x);
+    return;
+  }
+  ball.vz += G*dt;
+  ball.x += ball.vx*dt;
+  ball.y += ball.vy*dt;
+  ball.z += ball.vz*dt;
+
+  // Сетка
+  if(Math.abs(ball.y-NET_Y) < NET_BAND && ball.z < NET_H+BALL_R){
+    sfx.net();
+    const fromYou = ball.vy > 0;
+    const hitter = fromYou ? 'you' : 'ai';
+    const opponent = hitter==='you' ? 'ai' : 'you';
+    const bouncedOnOpponentSide = ball.bouncedSide !== null && ball.bouncedSide !== hitter;
+    if(state.mode==='rally'){
+      if(bouncedOnOpponentSide){
+        pointOutcome(hitter, hitter==='you' ? 'СОПЕРНИК НЕ ОТБИЛ' : 'ВЫ НЕ ОТБИЛИ');
+      } else {
+        pointOutcome(opponent, hitter==='you' ? 'В СЕТКУ' : 'СОПЕРНИК В СЕТКУ');
+      }
+      return;
+    }
+  }
+
+  const newSide = ball.y < NET_Y ? 'you' : 'ai';
+  if(newSide !== ball.side){
+    ball.side = newSide;
+    ball.bouncesOnThisSide = 0;
+  }
+
+  if(ball.z <= 0 && ball.vz < 0){
+    const inBoundsX = Math.abs(ball.x) <= HALF_W;
+    const inBoundsY = ball.y >= 0 && ball.y <= TABLE_LEN;
+    if(!inBoundsX || !inBoundsY){ resolveOut(ball); return; }
+    ball.z = 0;
+    ball.vz = -ball.vz*REST;
+    ball.vx *= FRICTION; ball.vy *= FRICTION;
+    ball.bouncesOnThisSide++;
+    sfx.table();
+
+    if(ball.inServe && !ball.serveOwnBounceDone){
+      if(ball.side === ball.lastHitter){
+        ball.serveOwnBounceDone = true;
+        ball.bouncedSide = ball.side;
+        const receiverSide = ball.lastHitter==='you' ? 'ai' : 'you';
+        const x2 = rand(-55,55);
+        const y2 = receiverSide==='ai' ? rand(178,235) : rand(40,95);
+        const v = aimShot(ball.x, ball.y, 0, x2, y2, 22);
+        ball.vx=v.vx; ball.vy=v.vy; ball.vz=v.vz;
+        return;
+      } else {
+        pointOutcome(ball.lastHitter==='you'?'ai':'you', 'ОШИБКА ПОДАЧИ');
+        return;
+      }
+    }
+    if(ball.inServe && ball.serveOwnBounceDone && ball.side !== ball.lastHitter){
+      ball.inServe = false;
+      ball.bouncedSide = ball.side;
+      ball.bouncesOnThisSide = 1;
+      return;
+    }
+    if(ball.bouncedSide === null){
+      ball.bouncedSide = ball.side;
+      ball.bouncesOnThisSide = 1;
+      return;
+    }
+    if(ball.bouncedSide === ball.side){
+      if(ball.bouncesOnThisSide >= 2){
+        const loser = ball.side;
+        const winner = loser==='you' ? 'ai' : 'you';
+        pointOutcome(winner, loser==='you' ? 'ВЫ НЕ ОТБИЛИ' : 'СОПЕРНИК НЕ ОТБИЛ');
+        return;
+      }
+      return;
+    }
+    ball.bouncedSide = ball.side;
+    ball.bouncesOnThisSide = 1;
+    return;
+  }
+
+  if(ball.y < -8 || ball.y > TABLE_LEN+8){ resolveOut(ball); return; }
+
+  checkHit('you', state.player, ball);
+  if(gameMode==='bot'){
+    checkHit('ai', state.ai, ball);
+  } else if(isHost){
+    // На хосте ракетка соперника = remoteInput (уже в канонической системе)
+    const remotePaddle = {
+      x: state.remoteInput.x, y: state.remoteInput.y,
+      vx: 0, vy: 0
+    };
+    checkHit('ai', remotePaddle, ball);
+  }
+}
+
+function resolveOut(ball){
+  const hitter = ball.lastHitter;
+  const opponent = hitter==='you' ? 'ai' : 'you';
+  if(ball.inServe && !ball.serveOwnBounceDone){
+    pointOutcome(opponent, 'ОШИБКА ПОДАЧИ');
+    return;
+  }
+  const bouncedOnOpponentSide = ball.bouncedSide !== null && ball.bouncedSide !== hitter;
+  if(bouncedOnOpponentSide){
+    pointOutcome(hitter, hitter==='you' ? 'СОПЕРНИК НЕ ОТБИЛ' : 'ВЫ НЕ ОТБИЛИ');
+  } else {
+    pointOutcome(opponent, 'АУТ');
+  }
+}
+
+/* ======================= HIT DETECTION ======================= */
+function checkHit(who, paddle, ball){
+  if(ball.lastHitter===who && ball.bouncedSide===who) return;
+  if(ball.side!==who) return;
+  const movingToward = who==='you' ? ball.vy<0 : ball.vy>0;
+  if(!movingToward) return;
+  if(ball.bouncedSide !== who) return;
+
+  const dx = ball.x-paddle.x, dy = ball.y-paddle.y;
+  const distXY = Math.hypot(dx,dy);
+  const distZ = Math.abs(ball.z - 6);
+  if(distXY <= HIT_R_XY && distZ <= HIT_R_Z && ball.z >= -2 && ball.z <= 90){
+    if(who==='you'){
+      strike(ball,'you',paddle,{x:paddle.vx,y:paddle.vy});
+    }else{
+      if(gameMode==='bot'){
+        const D = difficulty;
+        strike(ball,'ai',paddle,{
+          x: clamp((Math.random()-0.5)*70*D.power,-70,70),
+          y: 45*D.power,
+        });
+      } else {
+        const swing = state.remoteInput.swing || 0;
+        const force = Math.min(swing / 260, 1);
+        strike(ball,'ai',paddle,{
+          x: (Math.random()-0.5)*40,
+          y: 45*force,
+        });
+      }
+    }
+  }
+}
+
+/* ======================= RENDER ======================= */
+function drawCourt(){
+  const T = theme();
+  const grad = ctx.createLinearGradient(0,0,0,H);
+  grad.addColorStop(0,T.sky[0]); grad.addColorStop(0.55,T.sky[1]); grad.addColorStop(1,T.sky[2]);
+  ctx.fillStyle=grad; ctx.fillRect(0,0,W,H);
+  const rg = ctx.createRadialGradient(W/2,H*0.30,20, W/2,H*0.30, W*0.75);
+  rg.addColorStop(0,T.glow); rg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
+
+  const cx=W/2, cy=H*0.40;
+  const toS = (x,y,z)=>{ const p=project(x,y,z); return {x:cx+p.x, y:cy+p.y, s:p.s}; };
+  const nl=toS(-HALF_W,0,0), nr=toS(HALF_W,0,0),
+        fl=toS(-HALF_W,TABLE_LEN,0), fr=toS(HALF_W,TABLE_LEN,0);
+
+  ctx.beginPath();
+  ctx.moveTo(nl.x,nl.y); ctx.lineTo(nr.x,nr.y);
+  ctx.lineTo(fr.x,fr.y); ctx.lineTo(fl.x,fl.y); ctx.closePath();
+  const tgrad = ctx.createLinearGradient(0,nl.y,0,fl.y);
+  tgrad.addColorStop(0,T.table[0]); tgrad.addColorStop(1,T.table[1]);
+  ctx.fillStyle=tgrad; ctx.fill();
+
+  ctx.fillStyle='rgba(0,0,0,0.45)';
+  ctx.beginPath();
+  ctx.moveTo(nl.x,nl.y); ctx.lineTo(nr.x,nr.y);
+  ctx.lineTo(nr.x, nr.y+16); ctx.lineTo(nl.x, nl.y+16);
+  ctx.closePath(); ctx.fill();
+
+  ctx.strokeStyle=T.line; ctx.lineWidth=Math.max(1.5, 2.4*nl.s*0.4);
+  ctx.beginPath(); ctx.moveTo(nl.x,nl.y); ctx.lineTo(nr.x,nr.y);
+  ctx.lineTo(fr.x,fr.y); ctx.lineTo(fl.x,fl.y); ctx.closePath(); ctx.stroke();
+
+  const cnear=toS(0,0,0), cfar=toS(0,TABLE_LEN,0);
+  ctx.strokeStyle=T.lineSoft; ctx.lineWidth=1.2;
+  ctx.beginPath(); ctx.moveTo(cnear.x,cnear.y); ctx.lineTo(cfar.x,cfar.y); ctx.stroke();
+
+  const postL0=toS(-HALF_W-4,NET_Y,0), postL1=toS(-HALF_W-4,NET_Y,NET_H);
+  const postR0=toS(HALF_W+4,NET_Y,0),  postR1=toS(HALF_W+4,NET_Y,NET_H);
+  ctx.fillStyle=T.net;
+  ctx.beginPath();
+  ctx.moveTo(postL0.x,postL0.y); ctx.lineTo(postR0.x,postR0.y);
+  ctx.lineTo(postR1.x,postR1.y); ctx.lineTo(postL1.x,postL1.y);
+  ctx.closePath(); ctx.fill();
+  ctx.strokeStyle=T.netEdge; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.moveTo(postL1.x,postL1.y); ctx.lineTo(postR1.x,postR1.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(postL0.x,postL0.y); ctx.lineTo(postL1.x,postL1.y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(postR0.x,postR0.y); ctx.lineTo(postR1.x,postR1.y); ctx.stroke();
+}
+
+function drawPaddle(worldX, worldY, color, isYou){
+  const cx=W/2, cy=H*0.40;
+  const p = project(worldX, worldY, 6);
+  const sx=cx+p.x, sy=cy+p.y;
+  const R = Math.max(9, PADDLE_R * p.s);
+  ctx.save();
+  ctx.translate(sx,sy);
+  ctx.fillStyle='#4a3220';
+  ctx.fillRect(-R*0.18, R*0.55, R*0.36, R*0.95);
+  ctx.beginPath();
+  ctx.ellipse(0,0, R, R*0.78, 0,0,Math.PI*2);
+  ctx.fillStyle=color; ctx.fill();
+  ctx.lineWidth=Math.max(1,R*0.08);
+  ctx.strokeStyle='rgba(0,0,0,0.5)'; ctx.stroke();
+  // Ободок: у вас золотой, у соперника серо-голубой — чтобы визуально различать
+  ctx.beginPath();
+  ctx.ellipse(0,0, R, R*0.78, 0,0,Math.PI*2);
+  ctx.lineWidth=Math.max(1,R*0.16);
+  ctx.strokeStyle= isYou ? '#ffe08a' : '#a8c0d8';
+  ctx.globalAlpha=0.85; ctx.stroke();
+  ctx.restore();
+}
+
+function drawBall(ball){
+  const cx=W/2, cy=H*0.40;
+  const shp = project(ball.x, ball.y, 0);
+  const shx=cx+shp.x, shy=cy+shp.y;
+  const shrink = clamp(1-ball.z/90, 0.15, 1);
+  const shadowR = BALL_R * shp.s * shrink * 1.4;
+  ctx.beginPath();
+  ctx.ellipse(shx, shy, shadowR, shadowR*0.45, 0,0,Math.PI*2);
+  ctx.fillStyle='rgba(0,0,0,'+(0.35*shrink)+')';
+  ctx.fill();
+
+  const p = project(ball.x, ball.y, ball.z);
+  const bx=cx+p.x, by=cy+p.y;
+  const r = Math.max(2.5, BALL_R * p.s);
+  const bg = ctx.createRadialGradient(bx-r*0.35,by-r*0.35,r*0.1, bx,by,r);
+  bg.addColorStop(0,'#fffdf3'); bg.addColorStop(0.7,'#f0a24a'); bg.addColorStop(1,'#d85a1e');
+  ctx.beginPath(); ctx.arc(bx,by,r,0,Math.PI*2);
+  ctx.fillStyle=bg; ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.25)'; ctx.lineWidth=0.8; ctx.stroke();
+}
+
+/* Интерполяция мяча у клиента для плавности */
+function interpolateBall(dt){
+  if(!state.ballVisual || !state.ballTarget) return;
+  const v = state.ballVisual, t = state.ballTarget;
+  const k = Math.min(dt*18, 1);
+  v.x += (t.x - v.x)*k;
+  v.y += (t.y - v.y)*k;
+  v.z += (t.z - v.z)*k;
+  v.vx = t.vx; v.vy = t.vy; v.vz = t.vz;
+  v.side = t.side; v.lastHitter = t.lastHitter;
+  v.bouncedSide = t.bouncedSide; v.bouncesOnThisSide = t.bouncesOnThisSide;
+  v.inServe = t.inServe; v.serveOwnBounceDone = t.serveOwnBounceDone;
+  v.resting = t.resting;
+}
+
+/* ======================= MAIN LOOP ======================= */
+function loop(ts){
+  requestAnimationFrame(loop);
+  if(!state.lastTime) state.lastTime=ts;
+  let dt = (ts-state.lastTime)/1000;
+  state.lastTime = ts;
+  dt = Math.min(dt, 0.033);
+  dt *= TIME_SCALE;
+
+  if(state.mode==='menu'){ drawCourt(); return; }
+
+  updatePlayer(dt);
+
+  if(gameMode==='bot'){
+    updateAI(dt, state.ball);
+    if(state.ball) stepBall(dt, state.ball);
+  } else if(isHost){
+    if(state.ball) stepBall(dt, state.ball);
+  } else {
+    // Клиент: интерполируем визуальную позицию мяча
+    interpolateBall(dt);
+    state.ball = state.ballVisual;
+  }
+
+  if(gameMode==='online') netTick(ts);
+
+  drawCourt();
+
+  // Ракетка соперника ВСЕГДА вверху (в локальной системе клиента тоже)
+  if(gameMode==='bot'){
+    drawPaddle(state.ai.x, state.ai.y, theme().paddleAi, false);
+  } else {
+    drawPaddle(state.remoteInput.x, state.remoteInput.y, theme().paddleAi, false);
+  }
+  // Ваша ракетка ВСЕГДА внизу
+  drawPaddle(state.player.x, state.player.y, theme().paddleYou, true);
+
+  if(state.ball) drawBall(state.ball);
+}
+
+/* ======================= THEME BUTTONS ======================= */
+function buildThemeButtons(){
+  const rows = [document.getElementById('themeRow'), document.getElementById('themeRowBot')];
+  rows.forEach(row=>{
+    if(!row) return;
+    row.innerHTML='';
+    THEMES.forEach((t,i)=>{
+      const b = document.createElement('button');
+      b.className='theme-btn'+(i===themeIndex?' active':'');
+      b.style.background = t.swatch;
+      b.title = t.name;
+      b.addEventListener('click', ()=>{ themeIndex=i; syncThemeButtons(); });
+      row.appendChild(b);
+    });
+  });
+}
+function syncThemeButtons(){
+  document.querySelectorAll('.theme-btn').forEach((b,i)=>{
+    b.classList.toggle('active', i%THEMES.length===themeIndex);
+  });
+}
+
+/* ======================= MENU LOGIC ======================= */
+function setNetStatus(text, cls){
+  const el = document.getElementById('netStatus');
+  el.textContent = text;
+  el.className = 'net-status '+(cls||'');
+}
+
+document.getElementById('btnBot').addEventListener('click', ()=>{
+  document.getElementById('menuMain').style.display='none';
+  document.getElementById('menuBot').style.display='block';
+});
+document.getElementById('btnBackFromBot').addEventListener('click', ()=>{
+  document.getElementById('menuBot').style.display='none';
+  document.getElementById('menuMain').style.display='block';
+});
+document.querySelectorAll('.diff-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.diff-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    difficulty = DIFF[btn.dataset.d];
+  });
+});
+document.getElementById('btnBotStart').addEventListener('click', startBotGame);
+
+document.getElementById('btnOnline').addEventListener('click', ()=>{
+  document.getElementById('menuMain').style.display='none';
+  document.getElementById('menuNet').style.display='block';
+});
+document.getElementById('btnBackFromNet').addEventListener('click', ()=>{
+  if(peer){ peer.destroy(); peer=null; }
+  document.getElementById('menuNet').style.display='none';
+  document.getElementById('menuMain').style.display='block';
+});
+
+document.getElementById('btnCreateRoom').addEventListener('click', ()=>{
+  document.getElementById('netLobby').classList.remove('show');
+  document.getElementById('netWaiting').classList.add('show');
+  setNetStatus('');
+  initPeer();
+});
+
+document.getElementById('btnJoinRoom').addEventListener('click', ()=>{
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if(code.length < 4){ setNetStatus('Введите корректный код', 'error'); return; }
+  setNetStatus('Подключение...');
+  if(peer) peer.destroy();
+  peer = new Peer('pingpong-'+genCode(), { debug: 1 });
+  peer.on('open', ()=>{
+    conn = peer.connect('pingpong-'+code);
+    setupConnection();
+    isHost = false;
+    conn.on('open', ()=>{
+      startOnlineGame(false);
+    });
+  });
+  peer.on('error', (err)=>{
+    setNetStatus('Ошибка: '+err.type, 'error');
+  });
+});
+
+document.getElementById('btnCancelRoom').addEventListener('click', ()=>{
+  if(peer){ peer.destroy(); peer=null; }
+  document.getElementById('netWaiting').classList.remove('show');
+  document.getElementById('netLobby').classList.add('show');
+  setNetStatus('');
+});
+
+document.getElementById('roomCodeDisplay').addEventListener('click', ()=>{
+  const code = document.getElementById('roomCodeDisplay').textContent;
+  navigator.clipboard.writeText(code).then(()=>{
+    document.getElementById('netWaitStatus').textContent = 'Код скопирован!';
+  }).catch(()=>{});
+});
+
+/* ======================= INIT ======================= */
+buildThemeButtons();
+let loopStarted=false;
+requestAnimationFrame(function preloop(){ drawCourt(); if(state.mode==='menu' && !loopStarted) requestAnimationFrame(preloop); });
+
+})();
+</script>
+</body>
+</html>
