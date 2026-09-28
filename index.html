@@ -1096,15 +1096,32 @@ let createAttempts = 0;
 // wifi, часть домашних роутеров). Без TURN-релея peer.on('open') может сработать (сигнальный сервер
 // доступен), а вот conn.on('open') — никогда (сами данные пройти не могут). Добавляем публичный
 // TURN (Open Relay Project) как резерв — это исправляет подавляющее большинство "не подключается".
-const ICE_CONFIG = {
+/* TURN-креденшелы Metered подгружаются асинхронно. Пока они грузятся, ICE_CONFIG содержит
+   только STUN — этого достаточно для большинства домашних сетей, а TURN подключится, как только
+   придёт ответ от API. Если API недоступен, игра всё равно стартует (STUN-only). */
+let ICE_CONFIG = {
   iceServers: [
     { urls: 'stun:stun.l.google.com:19302' },
     { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'turn:openrelay.metered.ca:80', username:'openrelayproject', credential:'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443', username:'openrelayproject', credential:'openrelayproject' },
-    { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username:'openrelayproject', credential:'openrelayproject' },
   ]
 };
+
+const METERED_API_KEY = 'd3e2b9ae65caeda926c4fd3b8e8ae8a7ba79';
+const ICE_READY = (async () => {
+  try {
+    const r = await fetch(
+      'https://tennis_chill.metered.live/api/v1/turn/credentials?apiKey=' + METERED_API_KEY
+    );
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    const iceServers = await r.json();
+    if(Array.isArray(iceServers) && iceServers.length){
+      ICE_CONFIG = { iceServers: iceServers };
+    }
+  } catch(e){
+    console.warn('Metered TURN недоступен, работаем на STUN:', e);
+  }
+  return ICE_CONFIG;
+})();
 
 function genCode(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
 
@@ -1117,6 +1134,7 @@ const RETRY_TYPES = ['network','server-error','socket-error','socket-closed','un
 let hostRetry = 0, roomActive = false;
 
 async function initPeer(){
+  await ICE_READY;
   hostRetry = 0; roomActive = true;
   const ok = await window.__peerjsReady;
   if(!ok || typeof Peer==='undefined'){
@@ -1968,6 +1986,7 @@ document.getElementById('btnJoinRoom').addEventListener('click', ()=>{
 });
 async function attemptJoin(code){
   if(!joining) return;
+  await ICE_READY;
   setNetStatus(joinRetry ? 'Повторная попытка '+joinRetry+'/4...' : 'Подключение к серверу комнат...');
   const ok = await window.__peerjsReady;
   if(!ok || typeof Peer==='undefined'){
