@@ -1092,36 +1092,36 @@ let netOpenTimer = null;
 let netJoinTimer = null;
 let createAttempts = 0;
 
-// STUN сам по себе не работает за многими реальными NAT (мобильные сети, корпоративный/школьный
-// wifi, часть домашних роутеров). Без TURN-релея peer.on('open') может сработать (сигнальный сервер
-// доступен), а вот conn.on('open') — никогда (сами данные пройти не могут). Добавляем публичный
-// TURN (Open Relay Project) как резерв — это исправляет подавляющее большинство "не подключается".
-/* TURN-креденшелы Metered подгружаются асинхронно. Пока они грузятся, ICE_CONFIG содержит
-   только STUN — этого достаточно для большинства домашних сетей, а TURN подключится, как только
-   придёт ответ от API. Если API недоступен, игра всё равно стартует (STUN-only). */
-let ICE_CONFIG = {
+/* ---- TURN-серверы Metered (жёстко прописаны, без запросов к API) ----
+   Это те самые креденшелы из твоего Metered-приложения. Они дают STUN и TURN,
+   поэтому P2P-соединение проходит даже через строгий NAT и мобильный интернет. */
+const ICE_CONFIG = {
   iceServers: [
-    { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-  ]
+    {
+      urls: "stun:stun.relay.metered.ca:80",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:80",
+      username: "1b4a943d180ad2c38f599473",
+      credential: "R6HsVvHJ9B9mZTpC",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:80?transport=tcp",
+      username: "1b4a943d180ad2c38f599473",
+      credential: "R6HsVvHJ9B9mZTpC",
+    },
+    {
+      urls: "turn:global.relay.metered.ca:443",
+      username: "1b4a943d180ad2c38f599473",
+      credential: "R6HsVvHJ9B9mZTpC",
+    },
+    {
+      urls: "turns:global.relay.metered.ca:443?transport=tcp",
+      username: "1b4a943d180ad2c38f599473",
+      credential: "R6HsVvHJ9B9mZTpC",
+    },
+  ],
 };
-
-const METERED_API_KEY = 'd3e2b9ae65caeda926c4fd3b8e8ae8a7ba79';
-const ICE_READY = (async () => {
-  try {
-    const r = await fetch(
-      'https://tennis_chill.metered.live/api/v1/turn/credentials?apiKey=' + METERED_API_KEY
-    );
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    const iceServers = await r.json();
-    if(Array.isArray(iceServers) && iceServers.length){
-      ICE_CONFIG = { iceServers: iceServers };
-    }
-  } catch(e){
-    console.warn('Metered TURN недоступен, работаем на STUN:', e);
-  }
-  return ICE_CONFIG;
-})();
 
 function genCode(){ return Math.random().toString(36).substring(2,8).toUpperCase(); }
 
@@ -1134,7 +1134,6 @@ const RETRY_TYPES = ['network','server-error','socket-error','socket-closed','un
 let hostRetry = 0, roomActive = false;
 
 async function initPeer(){
-  await ICE_READY;
   hostRetry = 0; roomActive = true;
   const ok = await window.__peerjsReady;
   if(!ok || typeof Peer==='undefined'){
@@ -1986,7 +1985,6 @@ document.getElementById('btnJoinRoom').addEventListener('click', ()=>{
 });
 async function attemptJoin(code){
   if(!joining) return;
-  await ICE_READY;
   setNetStatus(joinRetry ? 'Повторная попытка '+joinRetry+'/4...' : 'Подключение к серверу комнат...');
   const ok = await window.__peerjsReady;
   if(!ok || typeof Peer==='undefined'){
