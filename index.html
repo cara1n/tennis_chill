@@ -83,7 +83,39 @@
   .rules{max-width:580px;text-align:left;background:rgba(255,255,255,.04);
     border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:14px 18px;
     font-size:13px;line-height:1.6;color:var(--dim);}
+
+  /* ---- Телефон / сенсорный экран ---- */
+  #touchShots{display:none;position:fixed;left:50%;bottom:8px;transform:translateX(-50%);
+    gap:5px;z-index:8;padding:5px 6px;border-radius:16px;background:rgba(0,0,0,.35);
+    backdrop-filter:blur(3px);}
+  body.touch #touchShots{display:flex;}
+  .ts-btn{width:40px;height:44px;border-radius:12px;border:2px solid rgba(255,255,255,.22);
+    background:rgba(255,255,255,.07);color:var(--ink);font-size:8px;font-weight:700;letter-spacing:.3px;
+    padding:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;
+    cursor:pointer;pointer-events:all;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+  .ts-btn b{font-size:16px;line-height:1;font-weight:700;}
+  .ts-btn.on{background:var(--accent);color:#1a1400;border-color:#fff;transform:translateY(-4px);}
+  body.touch .hint{bottom:64px !important;font-size:11px;max-width:92vw;white-space:normal;text-align:center;}
+  body.touch #shotIndicator{bottom:96px !important;}
+  body.phone .hud{padding:10px 12px;}
+  body.phone .score-box .num{font-size:30px;}
+  body.phone .score-box{min-width:64px;}
+  body.phone #overlay{align-items:flex-start;padding-top:16px;}
+  body.phone .rules{font-size:11.5px;}
+  @media (max-width:380px){ .ts-btn{width:36px;} }
+  .m-area{width:100%;font-size:11px;word-break:break-all;resize:none;letter-spacing:0;text-transform:none;}
   .rules b{color:var(--ink);}
+  .ladder-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:10px;
+    border:2px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03);text-align:left;}
+  .ladder-row.beaten{border-color:rgba(226,178,60,.5);background:rgba(226,178,60,.06);}
+  .ladder-row.current{border-color:var(--accent);background:rgba(226,178,60,.12);}
+  .ladder-row.locked{opacity:.4;}
+  .ladder-swatch{width:30px;height:30px;border-radius:8px;flex-shrink:0;}
+  .ladder-info{flex:1;min-width:0;}
+  .ladder-info .lname{font-weight:700;}
+  .ladder-info .ldesc{font-size:12px;color:var(--dim);}
+  .ladder-btn{padding:8px 14px;border-radius:8px;border:none;background:var(--accent);color:#1a1400;
+    font-weight:700;cursor:pointer;pointer-events:all;flex-shrink:0;}
   .net-panel{display:none;flex-direction:column;gap:14px;align-items:center;}
   .net-panel.show{display:flex;}
   .net-input{
@@ -148,6 +180,15 @@
   <div class="hint" id="hint">Двигайте мышью — ракетка следует за курсором. B — сменить фон.</div>
   <div class="hint" id="shotIndicator" style="bottom:52px;opacity:0;transition:opacity .12s;"></div>
   <div class="hint" id="oppShotFlash" style="top:56px;bottom:auto;left:50%;opacity:0;transition:opacity .15s;"></div>
+  <div id="touchShots">
+    <button class="ts-btn" data-shot="top"><b>⤴</b>ТОП</button>
+    <button class="ts-btn" data-shot="back"><b>⤵</b>РЕЗ</button>
+    <button class="ts-btn" data-shot="lob"><b>☁</b>СВЕЧА</button>
+    <button class="ts-btn" data-shot="curve"><b>〜</b>КРУТ</button>
+    <button class="ts-btn" data-shot="drop"><b>•</b>ДРОП</button>
+    <button class="ts-btn" data-shot="smash"><b>⚡</b>СМЭШ</button>
+    <button class="ts-btn" data-shot="block"><b>🛡</b>БЛОК</button>
+  </div>
 
   <!-- ГЛАВНОЕ МЕНЮ -->
   <div id="overlay">
@@ -156,6 +197,7 @@
       <p class="sub">P2P-мультиплеер прямо в браузере. Выберите режим игры.</p>
       <div style="display:flex;flex-direction:column;gap:12px;align-items:center;">
         <button class="menu-btn primary" id="btnBot">🎮 Играть с ботом</button>
+        <button class="menu-btn" id="btnTournament">🏆 Турнир</button>
         <button class="menu-btn" id="btnOnline">🌐 Играть по сети (P2P)</button>
       </div>
       <p class="sub" style="font-size:12px;letter-spacing:2px;color:var(--dim);margin-top:6px;">ФОН СТОЛА</p>
@@ -166,7 +208,7 @@
         <b>Стороны:</b> ВЫ всегда внизу, соперник всегда сверху — и у вас, и у него.<br>
         <b>Правила:</b> мяч должен один раз отскочить на вашей половине, прежде чем отбить.<br>
         <b>Очко:</b> если мяч после удара коснулся половины соперника, а тот не отбил — очко ударившему. Иначе аут/сетка — очко сопернику ударившего.<br>
-        <b>Удары (на ПК):</b> обычный свинг — плоский удар/смэш. <b>Shift</b> — топ-спин (быстрее, резко прыгает после отскока). <b>Ctrl</b> — резаный/подрезка (медленный, "умирает" на отскоке). <b>Alt</b> — свеча (высокий оборонительный удар). <b>Shift+Ctrl</b> вместе — закрутка (мяч уходит вбок весь полёт). <b>C</b> — укороченный (мягкий обманный удар у сетки). Бот использует всё то же самое по ситуации. На мобильных доступен только обычный удар.<br>
+        <b>Удары (на ПК):</b> обычный свинг — плоский удар/смэш. <b>Shift</b> — топ-спин (быстрее, резко прыгает после отскока). <b>Ctrl</b> — резаный/подрезка (медленный, "умирает" на отскоке). <b>Alt</b> — свеча (высокий оборонительный удар). <b>Shift+Ctrl</b> вместе — закрутка (мяч уходит вбок весь полёт). <b>C</b> — укороченный (мягкий обманный удар у сетки). <b>X</b> — смэш (очень быстрый, но рискованный). <b>Z</b> — блок (спокойный контролируемый ответ). Подача: Shift/Ctrl задают закрутку. Бот использует всё то же самое по ситуации.<br><b>На телефоне:</b> маленькие кнопки внизу — тап заряжает приём на следующий удар (повторный тап снимает). Короткий тап по столу — подача.<br>
         Игра до 11 очков, разница минимум 2.
       </div>
     </div>
@@ -185,6 +227,16 @@
       <button class="back-btn" id="btnBackFromBot">← Назад</button>
     </div>
 
+    <div id="menuTournament" style="display:none;">
+      <h1>🏆 <span>Турнир</span></h1>
+      <p class="sub">Шесть соперников подряд, без права выбрать себе противника полегче — у каждого свой почерк игры. Прогресс сохраняется в этом браузере.</p>
+      <div id="ladderList" style="display:flex;flex-direction:column;gap:8px;max-width:440px;margin:0 auto;"></div>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:14px;flex-wrap:wrap;">
+        <button class="back-btn" id="btnResetTourney">Сбросить прогресс</button>
+        <button class="back-btn" id="btnBackFromTourney">← В меню</button>
+      </div>
+    </div>
+
     <div id="menuNet" style="display:none;">
       <h1>Игра <span>по сети</span></h1>
       <div class="net-panel show" id="netLobby">
@@ -195,6 +247,31 @@
           <button class="menu-btn" id="btnJoinRoom" style="width:auto;padding:14px 24px;">Войти</button>
         </div>
         <div class="net-status" id="netStatus"></div>
+        <details id="manualBox" style="width:100%;max-width:460px;text-align:left;">
+          <summary style="cursor:pointer;color:var(--dim);font-size:13px;">Не подключается? Резервный способ (без сервера)</summary>
+          <p class="sub" style="font-size:12px;margin:8px 0;">Работает, даже когда сервер комнат недоступен: вы обмениваетесь двумя кодами вручную (мессенджер, почта).</p>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;">
+            <button class="back-btn" id="mHost">Я создаю игру</button>
+            <button class="back-btn" id="mGuest">Я присоединяюсь</button>
+          </div>
+          <div id="mHostBox" style="display:none;margin-top:10px;">
+            <div class="sub" style="font-size:12px;">1. Отправьте этот код другу:</div>
+            <textarea class="net-input m-area" id="mOffer" readonly rows="3"></textarea>
+            <button class="back-btn" data-copy="mOffer">Скопировать</button>
+            <div class="sub" style="font-size:12px;margin-top:8px;">2. Вставьте ответный код друга:</div>
+            <textarea class="net-input m-area" id="mAnswerIn" rows="3" placeholder="ответный код"></textarea>
+            <button class="menu-btn" id="mConnect" style="padding:10px 18px;">Подключить</button>
+          </div>
+          <div id="mGuestBox" style="display:none;margin-top:10px;">
+            <div class="sub" style="font-size:12px;">1. Вставьте код от друга:</div>
+            <textarea class="net-input m-area" id="mOfferIn" rows="3" placeholder="код хоста"></textarea>
+            <button class="menu-btn" id="mMakeAnswer" style="padding:10px 18px;">Создать ответ</button>
+            <div class="sub" style="font-size:12px;margin-top:8px;">2. Отправьте этот ответный код другу — игра начнётся сама:</div>
+            <textarea class="net-input m-area" id="mAnswerOut" readonly rows="3"></textarea>
+            <button class="back-btn" data-copy="mAnswerOut">Скопировать</button>
+          </div>
+          <div class="net-status" id="mStatus"></div>
+        </details>
         <button class="back-btn" id="btnBackFromNet">← Назад</button>
       </div>
       <div class="net-panel" id="netWaiting">
@@ -210,8 +287,10 @@
 
   <div id="endcard">
     <h2 id="endTitle">Победа!</h2>
+    <p class="sub" id="endSub" style="max-width:420px;text-align:center;margin:0;"></p>
     <div style="display:flex;gap:12px;flex-wrap:wrap;justify-content:center;">
       <button class="again" id="againBtn">Играть снова</button>
+      <button class="again outline" id="tourneyBtn" style="display:none;">К турниру</button>
       <button class="again outline" id="menuBtn">В меню</button>
     </div>
   </div>
@@ -240,12 +319,40 @@ window.__peerjsReady = new Promise((resolve)=>{
 const canvas = document.getElementById('c');
 const ctx = canvas.getContext('2d');
 let W=0,H=0,DPR=1;
+
+/* Камера. На ПК — прежние параметры (ничего не меняется). На телефоне камера подбирается так,
+   чтобы стол ЦЕЛИКОМ помещался по ширине и высоте экрана (иначе ближний край уезжал за экран). */
+const EYE = { x:0, y:-70, z:78 };
+let FOCAL = 520;
+let camCY = 0;          // экранная Y линии горизонта (раньше было зашито H*0.40)
+let isPhone = false;    // компактная раскладка (телефон/планшет с касанием)
+const HALF_W_CAM = 76.25, TABLE_LEN_CAM = 274;
+function applyCamera(){
+  const coarse = window.matchMedia && window.matchMedia('(pointer:coarse)').matches;
+  isPhone = coarse && Math.min(W,H) < 820;
+  document.body.classList.toggle('phone', isPhone);
+  document.body.classList.toggle('touch', !!coarse);
+  if(!isPhone){
+    EYE.y = -70; EYE.z = 78; FOCAL = 520; camCY = H*0.40;
+    return;
+  }
+  const ey = -90;
+  const k = 1/90 - 1/(TABLE_LEN_CAM+90);           // разница масштабов ближний/дальний край
+  const topY = H*0.20, botY = H*(W<H ? 0.80 : 0.78);
+  const spanH = botY - topY;
+  const ezMin = 130;
+  let F = Math.min(0.94*(W/2)*90/HALF_W_CAM, spanH/(ezMin*k));
+  const ez = spanH/(F*k);
+  EYE.y = ey; EYE.z = ez; FOCAL = F;
+  camCY = topY - ez*F/(TABLE_LEN_CAM+90);
+}
 function resize(){
   DPR = Math.min(window.devicePixelRatio||1, 2);
   W = window.innerWidth; H = window.innerHeight;
   canvas.width = W*DPR; canvas.height = H*DPR;
   canvas.style.width=W+'px'; canvas.style.height=H+'px';
   ctx.setTransform(DPR,0,0,DPR,0,0);
+  applyCamera();
 }
 window.addEventListener('resize', resize);
 resize();
@@ -327,7 +434,30 @@ const SKINS = [
   { name:'Дерево',   face:'#8a5a34', rim:'#3d2412', pattern:'wood' },
   { name:'Мрамор',   face:'#e9e7e1', rim:'#9a978f', pattern:'marble' },
   { name:'Радуга',   face:'#ff3b3b', rim:'#ffffff', pattern:'rainbow' },
+  { name:'Хром',     face:'#b8c0cc', rim:'#f4f7fb', pattern:'chrome' },
+  { name:'Космос',   face:'#0d0b2a', rim:'#8f7bff', pattern:'galaxy' },
+  { name:'Камуфляж', face:'#4b5a2f', rim:'#2a3319', pattern:'camo' },
+  { name:'Голограмма', face:'#7a5cff', rim:'#ffffff', pattern:'holo' },
 ];
+/* ======================= TOURNAMENT ======================= */
+// bias домножает вероятность конкретного типа удара у aiShotType/aiServeShotType (см. выше) —
+// так каждый соперник реально ощущается по-разному, а не просто "легче/сложнее".
+const OPPONENTS = [
+  { name:'Стажёр Дима',    diffKey:'easy',   skin:1, bias:{},                             desc:'Только начал играть — берёт простотой.' },
+  { name:'Резаный Виктор', diffKey:'easy',   skin:7, bias:{back:2.0},                     desc:'Обожает подрезки, изматывает медленной игрой.' },
+  { name:'Топ-спин Аня',   diffKey:'medium', skin:3, bias:{top:2.2, curve:1.3},           desc:'Атакует топ-спином при любой возможности.' },
+  { name:'Стена Олег',     diffKey:'medium', skin:4, bias:{lob:1.8, back:1.3, block:2.5},            desc:'Почти не ошибается, обороняется свечами.' },
+  { name:'Хитрец Марк',    diffKey:'hard',   skin:2, bias:{drop:2.2, curve:1.5},          desc:'Обманывает укороченными и закруткой.' },
+  { name:'Чемпион Лео',    diffKey:'hard',   skin:6, bias:{top:1.4, curve:1.4, drop:1.3, smash:1.6}, desc:'Владеет всем — финальный соперник турнира.' },
+];
+let tournamentActive = false;
+let tournamentRound = 0;
+let aiSkinIndex = 1; // скин ИИ-соперника: 1 (Ночь, классическая чёрная резина) вне турнира
+try{
+  const savedRound = parseInt(localStorage.getItem('pp_tourney_round'),10);
+  if(!isNaN(savedRound) && savedRound>=0) tournamentRound = Math.min(savedRound, OPPONENTS.length);
+}catch(e){}
+
 let skinIndex = 0;
 try{
   const savedSkin = parseInt(localStorage.getItem('pp_skin'),10);
@@ -338,8 +468,6 @@ try{
 if(themeIndex<0 || themeIndex>=THEMES.length) themeIndex=0;
 
 /* ======================= CAMERA ======================= */
-const EYE = { x:0, y:-70, z:78 };
-const FOCAL = 520;
 function project(x,y,z){
   const ry = y - EYE.y;
   const scale = FOCAL/ry;
@@ -357,6 +485,7 @@ let difficulty = DIFF.medium;
 /* ======================= GAME MODE ======================= */
 let gameMode = 'bot';   // 'bot' | 'online'
 let isHost = false;     // в онлайне: хост — авторитетная симуляция
+let currentOpponentBias = {}; // множители склонности бота к типам ударов (см. ТУРНИР); {} = обычный бот
 let connected = false;
 
 /* ======================= STATE ======================= */
@@ -382,7 +511,9 @@ const state = {
   remoteInput:{x:0,y:230, swing:0, shotType:'flat', skin:null},
   remoteSkin:null,
   lastNetSend:0,
-  keys:{shift:false, ctrl:false, alt:false, c:false},
+  serveFallbackTimer:null,
+  keys:{shift:false, ctrl:false, alt:false, c:false, x:false, z:false},
+  touchShot:null,
 };
 
 function newBall(){
@@ -391,7 +522,7 @@ function newBall(){
     side:'you', lastHitter:null, bouncedSide:null, bouncesOnThisSide:0,
     inServe:true, serveOwnBounceDone:false, resting:true,
     spinType:'flat', spinGravMul:1, spinBounceFriction:null, spinBounceRest:null,
-    curveAccel:0,
+    curveAccel:0, serveShotType:'flat',
   };
 }
 
@@ -429,19 +560,36 @@ function mirrorBall(b){
 }
 
 /* ======================= INPUT ======================= */
-function setMouseFromEvent(clientX, clientY){
+function setMouseFromEvent(clientX, clientY, yOffset){
   const rect = canvas.getBoundingClientRect();
   state.mouse.x = clientX - rect.left;
-  state.mouse.y = clientY - rect.top;
+  state.mouse.y = clientY - rect.top + (yOffset||0);
   state.mouse.active = true;
 }
+// На телефоне ракетка рисуется чуть ВЫШЕ пальца, чтобы палец её не закрывал.
+const TOUCH_Y_OFFSET = -58;
+let touchInfo = null;
 canvas.addEventListener('mousemove', e=> setMouseFromEvent(e.clientX,e.clientY));
 canvas.addEventListener('touchmove', e=>{
-  if(e.touches[0]) setMouseFromEvent(e.touches[0].clientX, e.touches[0].clientY);
+  const t = e.touches[0];
+  if(t){
+    setMouseFromEvent(t.clientX, t.clientY, isPhone ? TOUCH_Y_OFFSET : 0);
+    if(touchInfo && Math.hypot(t.clientX-touchInfo.x, t.clientY-touchInfo.y) > 14) touchInfo.moved = true;
+  }
   e.preventDefault();
 }, {passive:false});
 canvas.addEventListener('touchstart', e=>{
-  if(e.touches[0]) setMouseFromEvent(e.touches[0].clientX, e.touches[0].clientY);
+  const t = e.touches[0];
+  if(t){
+    setMouseFromEvent(t.clientX, t.clientY, isPhone ? TOUCH_Y_OFFSET : 0);
+    touchInfo = { x:t.clientX, y:t.clientY, t:performance.now(), moved:false };
+  }
+  e.preventDefault();
+}, {passive:false});
+// Короткий тап без движения = подача (click на касаниях подавляется preventDefault, поэтому вручную).
+canvas.addEventListener('touchend', e=>{
+  if(touchInfo && !touchInfo.moved && performance.now()-touchInfo.t < 300) tryServe();
+  touchInfo = null;
   e.preventDefault();
 }, {passive:false});
 canvas.addEventListener('click', ()=> tryServe());
@@ -452,18 +600,29 @@ window.addEventListener('keydown', e=>{
   if(e.code==='ControlLeft'||e.code==='ControlRight'){ state.keys.ctrl=true; e.preventDefault(); }
   if(e.code==='AltLeft'||e.code==='AltRight'){ state.keys.alt=true; e.preventDefault(); }
   if(e.code==='KeyC') state.keys.c=true;
+  if(e.code==='KeyX') state.keys.x=true;
+  if(e.code==='KeyZ') state.keys.z=true;
 });
 window.addEventListener('keyup', e=>{
   if(e.code==='ShiftLeft'||e.code==='ShiftRight') state.keys.shift=false;
   if(e.code==='ControlLeft'||e.code==='ControlRight') state.keys.ctrl=false;
   if(e.code==='AltLeft'||e.code==='AltRight') state.keys.alt=false;
   if(e.code==='KeyC') state.keys.c=false;
+  if(e.code==='KeyX') state.keys.x=false;
+  if(e.code==='KeyZ') state.keys.z=false;
 });
 // Если окно теряет фокус, "залипшие" клавиши могли бы застрять — сбрасываем.
-window.addEventListener('blur', ()=>{ state.keys.shift=state.keys.ctrl=state.keys.alt=state.keys.c=false; });
+window.addEventListener('blur', ()=>{ state.keys.shift=state.keys.ctrl=state.keys.alt=state.keys.c=state.keys.x=state.keys.z=false; });
 
 function tryServe(){
-  if(state.mode==='serve' && state.server==='you') launchServe('you');
+  if(state.mode!=='serve' || state.server!=='you') return;
+  if(gameMode==='online' && !isHost){
+    // Клиент не считает мяч сам — просит хоста подать от его имени, с его типом удара.
+    sendNet({ t:'serveNow', shotType: serveSpinType() });
+    setHint('Подача отправлена...');
+    return;
+  }
+  launchServe('you');
 }
 function cycleTheme(){
   themeIndex = (themeIndex+1)%THEMES.length;
@@ -480,18 +639,48 @@ function computeShotType(){
   if(state.keys.ctrl) return 'back';
   if(state.keys.alt) return 'lob';
   if(state.keys.c) return 'drop';
+  if(state.keys.x) return 'smash';
+  if(state.keys.z) return 'block';
+  if(state.touchShot) return state.touchShot;   // "заряженный" приём с экранной кнопки (телефон)
   return 'flat';
 }
-/* Бот выбирает удар по ситуации на столе, а не наугад, и умеет ВСЁ то же, что и игрок —
-   включая закрутку и укороченный. Короткий/высокий мяч у сетки -> топ-спин, а если вдобавок
-   игрок стоит далеко от сетки — иногда обманный укороченный. Глубокий/очень быстрый мяч -> свеча
-   или подрезка (оборона). Низкий мяч -> подрезка (приём). "skill" — насколько часто бот вообще
-   следует тактике вместо простого плоского удара; разница по сложности идёт именно отсюда. */
+/* Экранные кнопки: тап заряжает приём на СЛЕДУЮЩИЙ удар/подачу, повторный тап снимает. */
+let touchShotTimer = null;
+function armShot(type){
+  state.touchShot = (state.touchShot===type) ? null : type;
+  clearTimeout(touchShotTimer);
+  if(state.touchShot) touchShotTimer = setTimeout(()=>{ state.touchShot=null; syncTouchButtons(); }, 4000);
+  syncTouchButtons();
+}
+function syncTouchButtons(){
+  document.querySelectorAll('.ts-btn').forEach(b=> b.classList.toggle('on', b.dataset.shot===state.touchShot));
+}
+function consumeTouchShot(){
+  if(state.touchShot){ state.touchShot=null; clearTimeout(touchShotTimer); syncTouchButtons(); }
+}
+// Подача: реалистично поддерживаем только топ-спин и резаный (свеча/укороченный как подача не имеют смысла)
+function serveSpinType(){
+  const t = computeShotType();
+  return (t==='top'||t==='back') ? t : 'flat';
+}
+function aiServeShotType(){
+  if(difficulty===DIFF.easy) return 'flat';
+  const bias = currentOpponentBias || {};
+  const pTop = 0.22*(bias.top||1), pBack = 0.18*(bias.back||1);
+  const r = Math.random();
+  if(r<pTop) return 'top';
+  if(r<pTop+pBack) return 'back';
+  return 'flat';
+}
+// currentOpponentBias (см. TOURNAMENT) домножает склонность бота к конкретным типам ударов —
+// у обычного бота вне турнира это {} (все множители = 1, поведение не меняется).
 function aiShotType(ball){
   const D = difficulty;
+  const bias = currentOpponentBias || {};
+  const b = (k)=> bias[k]!=null ? bias[k] : 1;
   const skill = D===DIFF.hard ? 0.88 : D===DIFF.medium ? 0.5 : 0.15;
   if(Math.random() > skill){
-    return (D!==DIFF.easy && Math.random()<0.22) ? 'top' : 'flat';
+    return (D!==DIFF.easy && Math.random()<0.22*b('top')) ? 'top' : 'flat';
   }
   const depth = ball.y - NET_Y;         // глубина мяча на стороне бота (0 = у сетки)
   const height = ball.z;                // высота мяча в момент касания
@@ -499,13 +688,18 @@ function aiShotType(ball){
   const playerDeep = state.player.y < 35; // игрок далеко от сетки — хорошая цель для укороченного
 
   if(depth < 45 && height > 12){
-    if(D!==DIFF.easy && playerDeep && Math.random()<0.4) return 'drop';
-    if(D===DIFF.hard && Math.random()<0.15) return 'curve';
+    if(D!==DIFF.easy && playerDeep && Math.random()<0.4*b('drop')) return 'drop';
+    if(D!==DIFF.easy && height > 16 && Math.random()<0.28*b('smash')) return 'smash';   // высокий мяч у сетки — добивание
+    if(D===DIFF.hard && Math.random()<0.15*b('curve')) return 'curve';
     return 'top';                                                       // короткий и высокий — атаковать
   }
-  if(depth > 95 || incomingSpeed > 230) return Math.random()<0.55 ? 'lob' : 'back'; // глубокий/сильный — обороняться
+  if(depth > 95 || incomingSpeed > 230){
+    if(incomingSpeed > 230 && D!==DIFF.easy && Math.random()<0.3*b('block')) return 'block'; // жёсткий мяч — блок
+    const lobShare = 0.55*b('lob') / (0.55*b('lob') + 0.45*b('back'));
+    return Math.random()<lobShare ? 'lob' : 'back';                     // глубокий/сильный — обороняться
+  }
   if(height < 6) return 'back';                                         // низкий мяч — подрезка
-  if(D===DIFF.hard && Math.random()<0.12) return 'curve';
+  if(D===DIFF.hard && Math.random()<0.12*b('curve')) return 'curve';
   return 'flat';
 }
 
@@ -579,13 +773,53 @@ function endGame(winner){
   state.mode='game-end';
   if(winner==='you') state.gamesYou++; else state.gamesCpu++;
   updateScoreUI();
-  const card = document.getElementById('endcard');
-  document.getElementById('endTitle').textContent = winner==='you' ? 'Вы выиграли партию! 🏓' : 'Соперник выиграл партию';
-  document.getElementById('endTitle').style.color = winner==='you' ? '#e2b23c' : '#ff7a63';
-  card.style.display='flex';
+  const title = document.getElementById('endTitle');
+  const sub = document.getElementById('endSub');
+  const again = document.getElementById('againBtn');
+  const tBtn = document.getElementById('tourneyBtn');
+  again.style.display = 'inline-block';
+  if(tournamentActive){
+    const opp = OPPONENTS[tournamentRound];
+    tBtn.style.display = 'inline-block';
+    if(winner==='you'){
+      tournamentRound = Math.min(tournamentRound+1, OPPONENTS.length);
+      try{ localStorage.setItem('pp_tourney_round', tournamentRound); }catch(e){}
+      title.style.color = '#e2b23c';
+      if(tournamentRound >= OPPONENTS.length){
+        title.textContent = '🏆 Вы — чемпион турнира!';
+        sub.textContent = 'Все шесть соперников побеждены.';
+        again.style.display = 'none';
+      } else {
+        title.textContent = 'Победа над «'+opp.name+'»!';
+        sub.textContent = 'Следующий: '+OPPONENTS[tournamentRound].name+' — '+OPPONENTS[tournamentRound].desc;
+        again.textContent = 'Играть дальше';
+      }
+    } else {
+      title.textContent = 'Поражение';
+      title.style.color = '#ff7a63';
+      sub.textContent = opp.name+' оказался сильнее. Можно взять реванш.';
+      again.textContent = 'Реванш';
+    }
+  } else {
+    tBtn.style.display = 'none';
+    sub.textContent = '';
+    again.textContent = 'Играть снова';
+    title.textContent = winner==='you' ? 'Вы выиграли партию! 🏓' : 'Соперник выиграл партию';
+    title.style.color = winner==='you' ? '#e2b23c' : '#ff7a63';
+  }
+  document.getElementById('endcard').style.display='flex';
 }
+document.getElementById('tourneyBtn').addEventListener('click', ()=>{
+  document.getElementById('endcard').style.display='none';
+  tournamentActive = false;
+  showTournamentMenu();
+});
 document.getElementById('againBtn').addEventListener('click', ()=>{
   document.getElementById('endcard').style.display='none';
+  if(tournamentActive){
+    if(tournamentRound < OPPONENTS.length) startTournamentMatch(tournamentRound);
+    return;
+  }
   state.scoreYou=0; state.scoreCpu=0;
   state.server = Math.random()<0.5?'you':'ai';
   updateScoreUI();
@@ -593,6 +827,8 @@ document.getElementById('againBtn').addEventListener('click', ()=>{
 });
 document.getElementById('menuBtn').addEventListener('click', ()=>{
   document.getElementById('endcard').style.display='none';
+  tournamentActive = false; currentOpponentBias = {}; aiSkinIndex = 1;
+  document.getElementById('menuTournament').style.display='none';
   state.scoreYou=0; state.scoreCpu=0;
   state.mode='menu';
   if(conn){ try{ conn.close(); }catch(e){} conn=null; }
@@ -634,42 +870,76 @@ function resetForServe(){
     : 'Соперник подаёт...');
   if(state.server==='ai'){
     if(gameMode==='bot'){
-      setTimeout(()=>{ if(state.mode==='serve') launchServe('ai'); }, rand(600,1100));
+      setTimeout(()=>{ if(state.mode==='serve') launchServe('ai', aiServeShotType()); }, rand(600,1100));
     } else if(isHost){
-      setTimeout(()=>{ if(state.mode==='serve') launchServe('ai'); }, rand(600,1100));
+      // Хост ждёт реальную подачу от клиента (сообщение 'serveNow'); таймер тут — только подстраховка
+      // на случай потери сообщения в сети, чтобы игра не зависла намертво.
+      clearTimeout(state.serveFallbackTimer);
+      state.serveFallbackTimer = setTimeout(()=>{
+        if(state.mode==='serve') launchServe('ai', aiServeShotType());
+      }, rand(3200,4200));
     }
   }
 }
-function launchServe(who){
+function launchServe(who, forcedShotType){
   const ball = state.ball;
   if(!ball || !ball.resting) return;
-  if(gameMode==='online' && !isHost) return;   // клиент не запускает подачу сам
+  if(gameMode==='online' && !isHost) return;   // клиент не запускает подачу сам, только просит хоста
+  clearTimeout(state.serveFallbackTimer);
   ball.resting = false;
   state.mode='rally';
   sfx.serve();
+  const shotType = forcedShotType || (who==='you' ? serveSpinType() : 'flat');
+  if(who==='you') consumeTouchShot();
+  ball.serveShotType = shotType;
+  const prof = shotProfile(shotType, 0.55);
   if(who==='you'){
     const aimX = clamp(state.player.x, -68, 68);
     const x1 = clamp(aimX*0.6, -60,60);
     const y1 = rand(38,58);
-    const v = aimShot(ball.x,ball.y,ball.z, x1,y1, 26);
-    ball.vx=v.vx; ball.vy=v.vy; ball.vz=v.vz;
+    const v = aimShot(ball.x,ball.y,ball.z, x1,y1, Math.max(prof.apex,20));
+    ball.vx=v.vx*Math.min(prof.paceMul,1.15); ball.vy=v.vy*Math.min(prof.paceMul,1.15); ball.vz=v.vz;
   }else{
     const x1 = rand(-55,55);
     const y1 = rand(220,250);
-    const v = aimShot(ball.x,ball.y,ball.z, x1,y1, 26);
-    ball.vx=v.vx; ball.vy=v.vy; ball.vz=v.vz;
+    const v = aimShot(ball.x,ball.y,ball.z, x1,y1, Math.max(prof.apex,20));
+    ball.vx=v.vx*Math.min(prof.paceMul,1.15); ball.vy=v.vy*Math.min(prof.paceMul,1.15); ball.vz=v.vz;
   }
   ball.lastHitter = who;
   ball.bouncedSide = null;
   ball.bouncesOnThisSide = 0;
   ball.serveOwnBounceDone = false;
-  setHint('Ждите отскока на своей половине, затем отбивайте!');
+  setHint(shotType==='flat' ? 'Ждите отскока на своей половине, затем отбивайте!'
+    : 'Подача с закруткой ('+(SHOT_LABELS[shotType]||shotType)+') — ждите отскока!');
 }
 
 /* ======================= STRIKE ======================= */
 /* shotType: 'flat' (по умолчанию/смэш), 'top' (топ-спин), 'back' (резаный/подрезка), 'lob' (свеча).
    Каждый тип реально меняет полёт (гравитационный множитель в полёте) и приземление
    (трение/реституция ОДНОГО следующего отскока) — это не косметика, а другая механика. */
+/* Общий профиль полёта/отскока для каждого типа удара — переиспользуется и обычным ударом (strike),
+   и подачей с закруткой (см. stepBall), чтобы цифры не расходились в двух местах. */
+function shotProfile(shotType, force){
+  switch(shotType){
+    case 'top':
+      return { apex:9+force*9, paceMul:1.30+force*0.25, spinGravMul:1.55, spinBounceFriction:1.03, spinBounceRest:1.02 };
+    case 'back':
+      return { apex:22+force*8, paceMul:0.62+force*0.12, spinGravMul:0.62, spinBounceFriction:0.52, spinBounceRest:0.55 };
+    case 'lob':
+      return { apex:55+force*15, paceMul:0.55, spinGravMul:1.0, spinBounceFriction:0.9, spinBounceRest:0.85 };
+    case 'curve':
+      return { apex:16+force*14, paceMul:1.05+force*0.20, spinGravMul:1.15, spinBounceFriction:0.85, spinBounceRest:0.9 };
+    case 'smash':
+      return { apex:7+force*3, paceMul:1.75+force*0.3, spinGravMul:1.25, spinBounceFriction:1.06, spinBounceRest:1.0 };
+    case 'block':
+      return { apex:11+force*4, paceMul:0.85, spinGravMul:1.0, spinBounceFriction:0.9, spinBounceRest:0.95 };
+    case 'drop':
+      return { apex:6+force*3, paceMul:0.40+force*0.08, spinGravMul:0.85, spinBounceFriction:0.55, spinBounceRest:0.55 };
+    default:
+      return { apex:14+force*16, paceMul:1+force*0.18, spinGravMul:1.0, spinBounceFriction:1.0, spinBounceRest:1.0 };
+  }
+}
+
 function strike(ball, hitter, paddle, paddleVel, shotType){
   shotType = shotType || 'flat';
   const towardAI = hitter==='you';
@@ -682,54 +952,26 @@ function strike(ball, hitter, paddle, paddleVel, shotType){
   let ty = baseNear + (baseFar - baseNear) * force;
   ty += clamp(paddleVel.y * 0.20, -25, 25);
 
-  let apex, paceMul, spinGravMul, spinBounceFriction, spinBounceRest, curveAccel=0;
-  switch(shotType){
-    case 'top': // топ-спин: ниже летит, быстрее, после отскока резко "прыгает" вперёд
-      apex = 9 + force*9;
-      paceMul = 1.30 + force*0.25;
-      spinGravMul = 1.55;
-      spinBounceFriction = 1.03;
-      spinBounceRest = 1.02;
-      ty += 12;
-      break;
-    case 'back': // резаный/подрезка: выше и медленнее летит, "умирает" на отскоке
-      apex = 22 + force*8;
-      paceMul = 0.62 + force*0.12;
-      spinGravMul = 0.62;
-      spinBounceFriction = 0.52;
-      spinBounceRest = 0.55;
-      break;
-    case 'lob': // свеча: очень высоко, глубоко, оборонительный удар
-      apex = 55 + force*15;
-      paceMul = 0.55;
-      spinGravMul = 1.0;
-      spinBounceFriction = 0.9;
-      spinBounceRest = 0.85;
-      ty = towardAI ? rand(232,270) : rand(6,42);
-      break;
-    case 'curve': // закрутка: мяч продолжает уходить вбок весь полёт — труднее читать траекторию
-      apex = 16 + force*14;
-      paceMul = 1.05 + force*0.20;
-      spinGravMul = 1.15;
-      spinBounceFriction = 0.85;
-      spinBounceRest = 0.9;
-      curveAccel = clamp(paddleVel.x*3.0, -420, 420);
-      break;
-    case 'drop': // укороченный: мягкий обманный тычок, падает сразу за сеткой
-      apex = 6 + force*3;
-      paceMul = 0.40 + force*0.08;
-      spinGravMul = 0.85;
-      spinBounceFriction = 0.55;
-      spinBounceRest = 0.55;
-      tx = clamp(ball.x + steerX*0.4, -60, 60);
-      ty = towardAI ? rand(146,170) : rand(104,130);
-      break;
-    default: // плоский удар / смэш — как раньше
-      apex = 14 + force*16;
-      paceMul = 1 + force*0.18;
-      spinGravMul = 1.0;
-      spinBounceFriction = 1.0;
-      spinBounceRest = 1.0;
+  const prof = shotProfile(shotType, force);
+  let { apex, paceMul, spinGravMul, spinBounceFriction, spinBounceRest } = prof;
+  let curveAccel = 0;
+  // Прицеливание для конкретных типов — то, что зависит от strike(), а не от общей физики удара.
+  if(shotType==='top'){ ty += 12; }
+  else if(shotType==='lob'){ ty = towardAI ? rand(232,270) : rand(6,42); }
+  else if(shotType==='curve'){ curveAccel = clamp(paddleVel.x*3.0, -420, 420); }
+  else if(shotType==='smash'){
+    // Смэш — рискованный: целимся глубоко и с разбросом, можно промахнуться в аут.
+    tx = clamp(ball.x + steerX + rand(-14,14), -85, 85);
+    ty = (towardAI ? rand(228,274) : rand(0,46)) + rand(-6,6);
+  }
+  else if(shotType==='block'){
+    // Блок — контролируемый ответ по центру, пейс берём мягкий.
+    tx = clamp(ball.x*0.55 + steerX*0.5, -60, 60);
+    ty = towardAI ? rand(170,205) : rand(70,105);
+  }
+  else if(shotType==='drop'){
+    tx = clamp(ball.x + steerX*0.4, -60, 60);
+    ty = towardAI ? rand(146,170) : rand(104,130);
   }
   ty = clamp(ty, towardAI ? 145 : 5, towardAI ? 272 : 132);
 
@@ -747,11 +989,12 @@ function strike(ball, hitter, paddle, paddleVel, shotType){
   ball.spinBounceRest = spinBounceRest;
   ball.curveAccel = curveAccel;
   sfx.paddle();
+  if(hitter==='you') consumeTouchShot();
   if(hitter==='ai' && shotType!=='flat') flashOppShot(shotType);
 }
 
 let oppFlashTimer=null;
-const SHOT_LABELS = { top:'⤴ ТОП-СПИН', back:'⤵ РЕЗАНЫЙ', lob:'☁ СВЕЧА', curve:'〜 ЗАКРУТКА', drop:'• УКОРОЧЕННЫЙ' };
+const SHOT_LABELS = { top:'⤴ ТОП-СПИН', back:'⤵ РЕЗАНЫЙ', lob:'☁ СВЕЧА', curve:'〜 ЗАКРУТКА', drop:'• УКОРОЧЕННЫЙ', smash:'⚡ СМЭШ', block:'🛡 БЛОК' };
 function flashOppShot(shotType){
   const el = document.getElementById('oppShotFlash');
   el.textContent = SHOT_LABELS[shotType] || '';
@@ -813,8 +1056,17 @@ function updatePlayer(dt){
   const p = state.player;
   p.prevX = p.x; p.prevY = p.y;
   if(state.mouse.active){
-    const my = clamp(state.mouse.y/H, 0, 1);
-    const targetY = P_Y_MIN + (1-my) * (P_Y_MAX - P_Y_MIN);
+    let targetY;
+    if(isPhone){
+      // Прямое управление: ракетка стоит там, куда указывает палец (со сдвигом выше пальца).
+      // Обратная проекция высоты ракетки (z=6) в мировую глубину y.
+      const dy = state.mouse.y - camCY;
+      targetY = dy > 1 ? ((EYE.z-6)*FOCAL/dy) + EYE.y : P_Y_MAX;
+      targetY = clamp(targetY, P_Y_MIN, P_Y_MAX);
+    } else {
+      const my = clamp(state.mouse.y/H, 0, 1);
+      targetY = P_Y_MIN + (1-my) * (P_Y_MAX - P_Y_MIN);
+    }
     const scaleAtY = FOCAL/(targetY - EYE.y);
     const worldX = (state.mouse.x - W/2)/scaleAtY;
     p.x = clamp(worldX, -HALF_W-30, HALF_W+30);
@@ -861,57 +1113,82 @@ function clearNetTimers(){
   clearTimeout(netJoinTimer); netJoinTimer=null;
 }
 
+const RETRY_TYPES = ['network','server-error','socket-error','socket-closed','unavailable-id'];
+let hostRetry = 0, roomActive = false;
+
 async function initPeer(){
-  createAttempts = 0;
+  hostRetry = 0; roomActive = true;
   const ok = await window.__peerjsReady;
   if(!ok || typeof Peer==='undefined'){
-    document.getElementById('netWaitStatus').textContent =
-      'Не удалось загрузить сетевой модуль. Проверьте интернет-соединение и повторите.';
-    document.getElementById('netWaitStatus').className = 'net-status error';
+    setWaitStatus('Не удалось загрузить сетевой модуль. Проверьте интернет или воспользуйтесь резервным способом (ниже в меню «по сети»).', true);
     return;
   }
   spawnHostPeer();
 }
+function setWaitStatus(t, err){
+  const el = document.getElementById('netWaitStatus');
+  el.textContent = t; el.className = 'net-status'+(err?' error':'');
+}
+
+/* Показываем, на каком шаге сбой: сервер комнат (signaling) или прямое соединение (ICE/NAT). */
+function watchIce(c, setter){
+  setTimeout(()=>{
+    const pc = c && c.peerConnection;
+    if(!pc) return;
+    pc.addEventListener('iceconnectionstatechange', ()=>{
+      const st = pc.iceConnectionState;
+      if(st==='checking') setter('Ищем путь до соперника (ICE)...');
+      else if(st==='failed') setter('Прямое соединение не удалось: сети не пропускают P2P (NAT/мобильный интернет). Попробуйте Wi-Fi у обоих, VPN или резервный способ.', true);
+      else if(st==='disconnected') setter('Связь с соперником нестабильна...');
+    });
+  }, 250);
+}
 
 function spawnHostPeer(){
-  if(peer) peer.destroy();
+  if(!roomActive) return;
+  if(peer){ try{ peer.destroy(); }catch(e){} }
   clearNetTimers();
   document.getElementById('roomCodeDisplay').textContent = '------';
-  document.getElementById('netWaitStatus').textContent = 'Создаём комнату...';
-  document.getElementById('netWaitStatus').className = 'net-status';
+  setWaitStatus('Создаём комнату...');
   peer = new Peer('pingpong-'+genCode(), { debug: 1, config: ICE_CONFIG });
 
   netOpenTimer = setTimeout(()=>{
-    document.getElementById('netWaitStatus').textContent =
-      'Сервер соединений не отвечает. Проверьте интернет и нажмите «Отменить», затем попробуйте снова.';
-    document.getElementById('netWaitStatus').className = 'net-status error';
-  }, 12000);
+    if(hostRetry < 5){
+      hostRetry++;
+      setWaitStatus('Сервер комнат долго не отвечает, повтор '+hostRetry+'/5...');
+      spawnHostPeer();
+    } else {
+      setWaitStatus('Сервер комнат недоступен. Нажмите «Отменить» и используйте резервный способ (без сервера).', true);
+    }
+  }, 9000);
 
   peer.on('open', (id) => {
     clearTimeout(netOpenTimer);
+    hostRetry = 0;
     roomCode = id.replace('pingpong-','');
     document.getElementById('roomCodeDisplay').textContent = roomCode;
-    document.getElementById('netWaitStatus').textContent = 'Ожидание соперника...';
-    document.getElementById('netWaitStatus').className = 'net-status';
+    setWaitStatus('Ожидание соперника...');
   });
   peer.on('connection', (c) => {
     conn = c;
     setupConnection();
+    watchIce(c, (t,e)=> setWaitStatus(t,e));
     isHost = true;
+    roomActive = false;
     startOnlineGame(true);
   });
   peer.on('disconnected', () => {
-    try{ peer.reconnect(); }catch(e){}
+    if(roomActive){ try{ peer.reconnect(); }catch(e){} }
   });
   peer.on('error', (err) => {
     clearTimeout(netOpenTimer);
-    if(err.type === 'unavailable-id' && createAttempts < 3){
-      createAttempts++;
-      spawnHostPeer(); // код случайно занят — тихо пробуем другой
+    if(roomActive && RETRY_TYPES.includes(err.type) && hostRetry < 5){
+      hostRetry++;
+      setWaitStatus('Сервер комнат ответил ошибкой ('+err.type+'), повтор '+hostRetry+'/5...');
+      setTimeout(spawnHostPeer, 900 + hostRetry*600);
       return;
     }
-    document.getElementById('netWaitStatus').textContent = 'Ошибка сети: '+err.type+'. Нажмите «Отменить» и попробуйте снова.';
-    document.getElementById('netWaitStatus').className = 'net-status error';
+    setWaitStatus('Ошибка сети: '+err.type+'. Нажмите «Отменить» и попробуйте снова или используйте резервный способ.', true);
   });
 }
 
@@ -926,7 +1203,9 @@ function setupConnection(){
   conn.on('error', () => {
     setNetStatus('Ошибка соединения с соперником.', 'error');
   });
+  const myConn = conn;
   conn.on('close', () => {
+    if(myConn !== conn || !connected) return;   // старое/несостоявшееся соединение — игнорируем
     connected = false;
     setNetStatus('Соперник отключился.', 'error');
     setHint('Соперник отключился. Нажмите «В меню».');
@@ -945,6 +1224,12 @@ function handleNetData(data){
   if(data.t === 'hello'){
     state.remoteInput.skin = data.skin;
     state.remoteSkin = data.skin;
+  }
+  else if(data.t === 'serveNow'){
+    // Реальный запрос подачи от клиента — хост подаёт немедленно от его имени с его типом удара.
+    if(isHost && state.mode==='serve' && state.server==='ai'){
+      launchServe('ai', data.shotType || 'flat');
+    }
   }
   else if(data.t === 'input'){
     // input ВСЕГДА приходит от клиента.
@@ -1025,6 +1310,7 @@ function netTick(ts){
 function startOnlineGame(host){
   isHost = host;
   gameMode = 'online';
+  tournamentActive = false; currentOpponentBias = {};
   document.getElementById('oppLabel').textContent = 'СОПЕРНИК';
   document.getElementById('netBadge').style.display = 'block';
   document.getElementById('netBadge').textContent = host ? 'P2P · ХОСТ' : 'P2P · КЛИЕНТ';
@@ -1110,6 +1396,13 @@ function stepBall(dt, ball){
     const rMul = ball.spinBounceRest!=null ? ball.spinBounceRest : 1;
     ball.vz = -ball.vz*REST*rMul;
     ball.vx *= FRICTION*fMul; ball.vy *= FRICTION*fMul;
+    // Задевание кромки стола — как в реальности, отскок у самого края чуть непредсказуем.
+    const edgeDist = Math.min(HALF_W-Math.abs(ball.x), ball.y, TABLE_LEN-ball.y);
+    if(edgeDist < 3.5){
+      const kick = (1-(edgeDist/3.5)) * 60;
+      ball.vx += (Math.random()-0.5)*kick;
+      ball.vy += (Math.random()-0.5)*kick*0.5;
+    }
     // Спин "расходуется" на первом отскоке после удара — дальше мяч летит по обычной физике,
     // пока его не ударят снова.
     ball.spinBounceFriction = null; ball.spinBounceRest = null; ball.spinGravMul = 1; ball.curveAccel = 0;
@@ -1123,8 +1416,14 @@ function stepBall(dt, ball){
         const receiverSide = ball.lastHitter==='you' ? 'ai' : 'you';
         const x2 = rand(-55,55);
         const y2 = receiverSide==='ai' ? rand(178,235) : rand(40,95);
-        const v = aimShot(ball.x, ball.y, 0, x2, y2, 22);
+        // Тип подачи (flat/top/back) реально проявляется именно на ЭТОМ перелёте через сетку —
+        // как в жизни: закрутка "хватается" за стол уже на стороне принимающего.
+        const prof = shotProfile(ball.serveShotType||'flat', 0.55);
+        const v = aimShot(ball.x, ball.y, 0, x2, y2, Math.max(prof.apex,18));
         ball.vx=v.vx; ball.vy=v.vy; ball.vz=v.vz;
+        ball.spinGravMul = prof.spinGravMul;
+        ball.spinBounceFriction = prof.spinBounceFriction;
+        ball.spinBounceRest = prof.spinBounceRest;
         return;
       } else {
         pointOutcome(ball.lastHitter==='you'?'ai':'you', 'ОШИБКА ПОДАЧИ');
@@ -1230,7 +1529,7 @@ function drawCourt(){
   rg.addColorStop(0,T.glow); rg.addColorStop(1,'rgba(0,0,0,0)');
   ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
 
-  const cx=W/2, cy=H*0.40;
+  const cx=W/2, cy=camCY;
   const toS = (x,y,z)=>{ const p=project(x,y,z); return {x:cx+p.x, y:cy+p.y, s:p.s}; };
   const nl=toS(-HALF_W,0,0), nr=toS(HALF_W,0,0),
         fl=toS(-HALF_W,TABLE_LEN,0), fr=toS(HALF_W,TABLE_LEN,0);
@@ -1271,7 +1570,7 @@ function drawCourt(){
 
 function drawPaddle(worldX, worldY, skin, isYou){
   skin = skin || SKINS[isYou?0:1];
-  const cx=W/2, cy=H*0.40;
+  const cx=W/2, cy=camCY;
   const p = project(worldX, worldY, 6);
   const sx=cx+p.x, sy=cy+p.y;
   const R = Math.max(9, PADDLE_R * p.s);
@@ -1293,6 +1592,23 @@ function drawPaddle(worldX, worldY, skin, isYou){
   } else if(skin.pattern==='gold'){
     const g = ctx.createLinearGradient(-R,-R*0.7,R,R*0.7);
     g.addColorStop(0,'#fff3c4'); g.addColorStop(0.5,skin.face); g.addColorStop(1,'#7a5c1a');
+    ctx.fillStyle=g;
+  } else if(skin.pattern==='chrome'){
+    const g = ctx.createLinearGradient(-R,-R*0.8,R,R*0.8);
+    g.addColorStop(0,'#ffffff'); g.addColorStop(0.28,'#8b94a3'); g.addColorStop(0.5,'#eef2f7');
+    g.addColorStop(0.72,'#6c7482'); g.addColorStop(1,'#d7dde6');
+    ctx.fillStyle=g;
+  } else if(skin.pattern==='galaxy'){
+    const g = ctx.createRadialGradient(R*0.2,-R*0.1,R*0.05, 0,0,R*1.1);
+    g.addColorStop(0,'#4a2c9a'); g.addColorStop(0.55,'#1a1250'); g.addColorStop(1,'#07061c');
+    ctx.fillStyle=g;
+  } else if(skin.pattern==='camo'){
+    ctx.fillStyle=skin.face;
+  } else if(skin.pattern==='holo'){
+    const t = performance.now()/1000;
+    const h1 = (t*60)%360, h2=(h1+90)%360, h3=(h1+200)%360;
+    const g = ctx.createLinearGradient(-R,-R*0.7,R,R*0.7);
+    g.addColorStop(0,'hsl('+h1+',90%,62%)'); g.addColorStop(0.5,'hsl('+h2+',90%,60%)'); g.addColorStop(1,'hsl('+h3+',90%,58%)');
     ctx.fillStyle=g;
   } else if(skin.pattern==='rainbow'){
     const g = ctx.createLinearGradient(-R,0,R,0);
@@ -1336,13 +1652,38 @@ function drawPaddle(worldX, worldY, skin, isYou){
   } else if(skin.pattern==='marble'){
     ctx.save(); ctx.clip();
     ctx.strokeStyle='rgba(120,115,105,0.35)'; ctx.lineWidth=Math.max(0.6,R*0.045);
+    const yy0=[-0.55,-0.2,0.18,0.5];
     for(let i=0;i<4;i++){
-      const yy = (Math.random()-0.5)*R*1.3;
+      const yy = yy0[i]*R;
       ctx.beginPath();
       ctx.moveTo(-R*1.1, yy);
       ctx.quadraticCurveTo(yy*0.3, yy+R*0.25, R*1.1, yy-R*0.2);
       ctx.stroke();
     }
+    ctx.restore();
+  } else if(skin.pattern==='galaxy'){
+    ctx.save(); ctx.clip();
+    const tw = performance.now()/700;
+    const stars=[[-0.6,-0.3],[0.4,-0.5],[0.7,0.2],[-0.2,0.45],[0.1,-0.05],[-0.75,0.25],[0.5,0.55],[-0.35,-0.6]];
+    stars.forEach((st,i)=>{
+      ctx.globalAlpha = 0.45+0.55*Math.abs(Math.sin(tw+i*1.7));
+      ctx.fillStyle='#ffffff';
+      ctx.beginPath(); ctx.arc(st[0]*R, st[1]*R*0.78, Math.max(0.8,R*0.045),0,Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha=1;
+    ctx.restore();
+  } else if(skin.pattern==='camo'){
+    ctx.save(); ctx.clip();
+    const blobs=[['#2a3319',-0.5,-0.2,0.42],['#8a7a44',0.35,-0.35,0.36],['#2a3319',0.45,0.3,0.4],['#8a7a44',-0.35,0.4,0.34],['#1d2412',0.0,0.05,0.28]];
+    blobs.forEach(bl=>{
+      ctx.fillStyle=bl[0]; ctx.beginPath();
+      ctx.ellipse(bl[1]*R,bl[2]*R*0.78,bl[3]*R,bl[3]*R*0.62,0.5,0,Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+  } else if(skin.pattern==='chrome'){
+    ctx.save(); ctx.clip();
+    ctx.fillStyle='rgba(255,255,255,0.35)';
+    ctx.beginPath(); ctx.ellipse(-R*0.3,-R*0.35,R*0.55,R*0.14,-0.5,0,Math.PI*2); ctx.fill();
     ctx.restore();
   } else if(skin.pattern==='neon'){
     ctx.save();
@@ -1366,7 +1707,7 @@ function drawPaddle(worldX, worldY, skin, isYou){
 }
 
 function drawBall(ball){
-  const cx=W/2, cy=H*0.40;
+  const cx=W/2, cy=camCY;
   const shp = project(ball.x, ball.y, 0);
   const shx=cx+shp.x, shy=cy+shp.y;
   const shrink = clamp(1-ball.z/90, 0.15, 1);
@@ -1445,7 +1786,7 @@ function loop(ts){
 
   // Ракетка соперника ВСЕГДА вверху (в локальной системе клиента тоже)
   if(gameMode==='bot'){
-    drawPaddle(state.ai.x, state.ai.y, SKINS[1], false); // классический чёрный цвет резины ИИ
+    drawPaddle(state.ai.x, state.ai.y, SKINS[aiSkinIndex], false);
   } else {
     const oppSkinIdx = isHost ? state.remoteInput.skin : state.remoteSkin;
     drawPaddle(state.remoteInput.x, state.remoteInput.y, SKINS[oppSkinIdx!=null?oppSkinIdx:1], false);
@@ -1507,6 +1848,73 @@ function syncSkinButtons(){
   });
 }
 
+
+/* ======================= TOURNAMENT UI ======================= */
+function renderLadder(){
+  const list = document.getElementById('ladderList');
+  list.innerHTML = '';
+  OPPONENTS.forEach((opp,i)=>{
+    const row = document.createElement('div');
+    const beaten = i < tournamentRound, current = i === tournamentRound;
+    row.className = 'ladder-row ' + (beaten?'beaten':current?'current':'locked');
+    const sw = document.createElement('div');
+    sw.className = 'ladder-swatch';
+    sw.style.background = SKINS[opp.skin].face;
+    sw.style.boxShadow = 'inset 0 0 0 3px '+SKINS[opp.skin].rim;
+    const info = document.createElement('div');
+    info.className = 'ladder-info';
+    info.innerHTML = '<div class="lname">'+(i+1)+'. '+opp.name+(beaten?' ✓':'')+'</div><div class="ldesc">'+opp.desc+'</div>';
+    row.appendChild(sw); row.appendChild(info);
+    if(current){
+      const btn = document.createElement('button');
+      btn.className = 'ladder-btn'; btn.textContent = 'Играть';
+      btn.addEventListener('click', ()=> startTournamentMatch(i));
+      row.appendChild(btn);
+    } else {
+      const b = document.createElement('div');
+      b.style.fontSize = '18px';
+      b.textContent = beaten ? '🏆' : '🔒';
+      row.appendChild(b);
+    }
+    list.appendChild(row);
+  });
+  if(tournamentRound >= OPPONENTS.length){
+    const done = document.createElement('p');
+    done.className = 'sub'; done.style.color = 'var(--accent)';
+    done.textContent = '🏆 Турнир пройден полностью! Можно сбросить прогресс и пройти заново.';
+    list.appendChild(done);
+  }
+}
+function showTournamentMenu(){
+  document.getElementById('overlay').style.display = 'flex';
+  document.getElementById('menuMain').style.display = 'none';
+  document.getElementById('menuBot').style.display = 'none';
+  document.getElementById('menuNet').style.display = 'none';
+  document.getElementById('menuTournament').style.display = 'block';
+  renderLadder();
+}
+function startTournamentMatch(roundIndex){
+  const opp = OPPONENTS[roundIndex];
+  if(!opp) return;
+  tournamentActive = true;
+  tournamentRound = roundIndex;
+  difficulty = DIFF[opp.diffKey];
+  currentOpponentBias = opp.bias || {};
+  aiSkinIndex = opp.skin;
+  startBotGame();                               // скрывает меню, сбрасывает счёт, запускает подачу
+  document.getElementById('oppLabel').textContent = opp.name;
+}
+document.getElementById('btnTournament').addEventListener('click', showTournamentMenu);
+document.getElementById('btnBackFromTourney').addEventListener('click', ()=>{
+  document.getElementById('menuTournament').style.display = 'none';
+  document.getElementById('menuMain').style.display = 'block';
+});
+document.getElementById('btnResetTourney').addEventListener('click', ()=>{
+  tournamentRound = 0;
+  try{ localStorage.setItem('pp_tourney_round', 0); }catch(e){}
+  renderLadder();
+});
+
 /* ======================= MENU LOGIC ======================= */
 function setNetStatus(text, cls){
   const el = document.getElementById('netStatus');
@@ -1529,7 +1937,10 @@ document.querySelectorAll('.diff-btn').forEach(btn=>{
     difficulty = DIFF[btn.dataset.d];
   });
 });
-document.getElementById('btnBotStart').addEventListener('click', startBotGame);
+document.getElementById('btnBotStart').addEventListener('click', ()=>{
+  tournamentActive = false; currentOpponentBias = {}; aiSkinIndex = 1;
+  startBotGame();
+});
 
 document.getElementById('btnOnline').addEventListener('click', ()=>{
   document.getElementById('menuMain').style.display='none';
@@ -1548,27 +1959,51 @@ document.getElementById('btnCreateRoom').addEventListener('click', ()=>{
   initPeer();
 });
 
-document.getElementById('btnJoinRoom').addEventListener('click', async ()=>{
-  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+let joinRetry = 0, joining = false;
+document.getElementById('btnJoinRoom').addEventListener('click', ()=>{
+  const code = document.getElementById('joinCode').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,'');
   if(code.length < 4){ setNetStatus('Введите корректный код', 'error'); return; }
-  setNetStatus('Подключение...');
+  joinRetry = 0; joining = true;
+  attemptJoin(code);
+});
+async function attemptJoin(code){
+  if(!joining) return;
+  setNetStatus(joinRetry ? 'Повторная попытка '+joinRetry+'/4...' : 'Подключение к серверу комнат...');
   const ok = await window.__peerjsReady;
   if(!ok || typeof Peer==='undefined'){
-    setNetStatus('Не удалось загрузить сетевой модуль. Проверьте интернет и повторите.', 'error');
+    joining = false;
+    setNetStatus('Не удалось загрузить сетевой модуль. Проверьте интернет или используйте резервный способ ниже.', 'error');
     return;
   }
   clearNetTimers();
-  if(peer) peer.destroy();
+  if(peer){ try{ peer.destroy(); }catch(e){} }
   peer = new Peer('pingpong-'+genCode(), { debug: 1, config: ICE_CONFIG });
+  const retryOrFail = (msg)=>{
+    if(!joining) return;
+    if(joinRetry < 4){
+      joinRetry++;
+      setTimeout(()=>attemptJoin(code), 900+joinRetry*500);
+    } else {
+      joining = false;
+      setNetStatus(msg, 'error');
+    }
+  };
+  netOpenTimer = setTimeout(()=> retryOrFail('Сервер комнат не отвечает. Попробуйте позже или резервный способ ниже.'), 9000);
   peer.on('open', ()=>{
+    clearTimeout(netOpenTimer);
+    setNetStatus('Ищем комнату '+code+'...');
     conn = peer.connect('pingpong-'+code, { reliable: true });
     setupConnection();
     isHost = false;
+    watchIce(conn, (t,e)=> setNetStatus(t, e?'error':''));
     netJoinTimer = setTimeout(()=>{
-      setNetStatus('Не удалось подключиться. Проверьте код или попробуйте другую сеть.', 'error');
-      if(conn){ try{ conn.close(); }catch(e){} }
-    }, 12000);
+      if(conn && !conn.open){
+        try{ conn.close(); }catch(e){}
+        retryOrFail('Не удалось соединиться напрямую. Проверьте код; если с кодом всё верно — сети не пропускают P2P: попробуйте Wi-Fi/VPN или резервный способ.');
+      }
+    }, 14000);
     conn.on('open', ()=>{
+      joining = false;
       clearNetTimers();
       startOnlineGame(false);
     });
@@ -1577,10 +2012,118 @@ document.getElementById('btnJoinRoom').addEventListener('click', async ()=>{
   peer.on('error', (err)=>{
     clearNetTimers();
     if(err.type === 'peer-unavailable'){
-      setNetStatus('Комната с таким кодом не найдена.', 'error');
+      joining = false;
+      setNetStatus('Комната с таким кодом не найдена. Проверьте код — хост должен держать окно открытым.', 'error');
+    } else if(RETRY_TYPES.includes(err.type)){
+      retryOrFail('Ошибка сети ('+err.type+'). Сервер комнат недоступен — используйте резервный способ ниже.');
     } else {
+      joining = false;
       setNetStatus('Ошибка сети: '+err.type, 'error');
     }
+  });
+}
+
+
+/* ======================= РЕЗЕРВНОЕ ПОДКЛЮЧЕНИЕ БЕЗ СЕРВЕРА =======================
+   Чистый WebRTC: два человека вручную обмениваются кодами (offer/answer). Сервер комнат не нужен,
+   поэтому ошибки "network" от общего сигнального сервера на этот способ не влияют.
+   (Прямой путь между сетями всё равно зависит от NAT — STUN/TURN те же, что и в основном режиме.) */
+let manualPC = null;
+function mStatus(t, err){ const el=document.getElementById('mStatus'); el.textContent=t; el.className='net-status'+(err?' error':''); }
+function b64enc(o){ return btoa(unescape(encodeURIComponent(JSON.stringify(o)))); }
+function b64dec(t){ return JSON.parse(decodeURIComponent(escape(atob(t.replace(/\s+/g,''))))); }
+function waitIce(pc, ms){
+  return new Promise(res=>{
+    if(pc.iceGatheringState==='complete') return res();
+    let t;
+    const chk=()=>{ if(pc.iceGatheringState==='complete'){ pc.removeEventListener('icegatheringstatechange',chk); clearTimeout(t); res(); } };
+    pc.addEventListener('icegatheringstatechange', chk);
+    t=setTimeout(()=>{ pc.removeEventListener('icegatheringstatechange',chk); res(); }, ms);
+  });
+}
+// Обёртка над DataChannel с тем же интерфейсом, что у PeerJS DataConnection (on/send/close/open).
+function rawConn(pc, dc){
+  const h = {};
+  const c = {
+    open:false, peerConnection:pc,
+    on(ev,cb){ (h[ev]=h[ev]||[]).push(cb); },
+    emit(ev,a){ (h[ev]||[]).forEach(f=>{ try{ f(a); }catch(e){ console.error(e); } }); },
+    send(d){ if(dc.readyState==='open') dc.send(JSON.stringify(d)); },
+    close(){ try{ dc.close(); pc.close(); }catch(e){} },
+  };
+  dc.onopen = ()=>{ c.open=true; c.emit('open'); };
+  dc.onclose = ()=>{ c.open=false; c.emit('close'); };
+  dc.onerror = ()=> c.emit('error');
+  dc.onmessage = e=>{ try{ c.emit('data', JSON.parse(e.data)); }catch(_){} };
+  c._fireIfOpen = ()=>{ if(dc.readyState==='open' && !c.open){ c.open=true; c.emit('open'); } };
+  return c;
+}
+function manualWatch(pc){
+  pc.addEventListener('iceconnectionstatechange', ()=>{
+    if(pc.iceConnectionState==='checking') mStatus('Ищем путь до соперника...');
+    if(pc.iceConnectionState==='failed') mStatus('Прямое соединение не удалось (NAT). Попробуйте Wi-Fi/VPN у обоих.', true);
+  });
+}
+function newManualPC(){
+  if(manualPC){ try{ manualPC.close(); }catch(e){} }
+  manualPC = new RTCPeerConnection(ICE_CONFIG);
+  manualWatch(manualPC);
+  return manualPC;
+}
+document.getElementById('mHost').addEventListener('click', async ()=>{
+  document.getElementById('mGuestBox').style.display='none';
+  document.getElementById('mHostBox').style.display='block';
+  mStatus('Создаём код...');
+  try{
+    const pc = newManualPC();
+    const dc = pc.createDataChannel('game', { ordered:true });
+    conn = rawConn(pc, dc);
+    isHost = true;
+    setupConnection();
+    conn.on('open', ()=> startOnlineGame(true));
+    await pc.setLocalDescription(await pc.createOffer());
+    await waitIce(pc, 6000);
+    document.getElementById('mOffer').value = b64enc(pc.localDescription);
+    mStatus('Отправьте код другу, затем вставьте его ответ ниже.');
+  }catch(e){ mStatus('Не удалось создать код: '+(e&&e.message||e), true); }
+});
+document.getElementById('mConnect').addEventListener('click', async ()=>{
+  try{
+    const ans = b64dec(document.getElementById('mAnswerIn').value);
+    await manualPC.setRemoteDescription(ans);
+    mStatus('Соединяем...');
+  }catch(e){ mStatus('Ответный код неверный — скопируйте его целиком.', true); }
+});
+document.getElementById('mGuest').addEventListener('click', ()=>{
+  document.getElementById('mHostBox').style.display='none';
+  document.getElementById('mGuestBox').style.display='block';
+  mStatus('Вставьте код от друга.');
+});
+document.getElementById('mMakeAnswer').addEventListener('click', async ()=>{
+  try{
+    const offer = b64dec(document.getElementById('mOfferIn').value);
+    const pc = newManualPC();
+    pc.ondatachannel = ev=>{
+      conn = rawConn(pc, ev.channel);
+      isHost = false;
+      setupConnection();
+      conn.on('open', ()=> startOnlineGame(false));
+      setTimeout(()=> conn._fireIfOpen(), 0);
+    };
+    await pc.setRemoteDescription(offer);
+    await pc.setLocalDescription(await pc.createAnswer());
+    await waitIce(pc, 6000);
+    document.getElementById('mAnswerOut').value = b64enc(pc.localDescription);
+    mStatus('Отправьте ответный код другу — игра начнётся сама.');
+  }catch(e){ mStatus('Код хоста неверный — скопируйте его целиком.', true); }
+});
+document.querySelectorAll('[data-copy]').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    const ta = document.getElementById(b.dataset.copy);
+    ta.select();
+    const done = ()=> mStatus('Скопировано — отправьте другу.');
+    if(navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done).catch(()=>{ try{ document.execCommand('copy'); done(); }catch(e){} });
+    else { try{ document.execCommand('copy'); done(); }catch(e){} }
   });
 });
 
@@ -1598,6 +2141,7 @@ document.getElementById('btnJoinRoom').addEventListener('click', async ()=>{
 })();
 
 document.getElementById('btnCancelRoom').addEventListener('click', ()=>{
+  roomActive = false; joining = false;
   if(peer){ peer.destroy(); peer=null; }
   document.getElementById('netWaiting').classList.remove('show');
   document.getElementById('netLobby').classList.add('show');
@@ -1624,6 +2168,10 @@ document.getElementById('btnCopyLink').addEventListener('click', ()=>{
 /* ======================= INIT ======================= */
 buildThemeButtons();
 buildSkinButtons();
+document.querySelectorAll('.ts-btn').forEach(b=>{
+  b.addEventListener('click', ()=> armShot(b.dataset.shot));
+  b.addEventListener('touchstart', e=>{ e.stopPropagation(); }, {passive:true});
+});
 let loopStarted=false;
 requestAnimationFrame(function preloop(){ drawCourt(); if(state.mode==='menu' && !loopStarted) requestAnimationFrame(preloop); });
 
